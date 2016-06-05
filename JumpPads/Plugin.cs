@@ -181,7 +181,7 @@ namespace JumpPads
         void editH(CommandArgs args)
         {
             float a = float.Parse(args.Parameters[0]);
-            args.Player.SendInfoMessage("You sen height as " + a);
+            args.Player.SendInfoMessage("You set height as " + a);
             height = (int)a;
             TShock.Log.ConsoleInfo("Height set as " + a);
             StreamWriter sw = new StreamWriter(File.Create(_configFilePath));
@@ -214,10 +214,10 @@ namespace JumpPads
         }
         void Info (CommandArgs args)
         {
-            args.Player.SendInfoMessage("Now height is" + height +
-                                        "To change height use /jpheight <block> or /jph <block>" +
-                                        "Now JumpPads are enable : " + toogleJumpPads +
-                                        "To toggle JumpPads use /jptoggle or /jpt" + 
+            args.Player.SendInfoMessage("Now height is" + height ,
+                                        "To change height use /jpheight <block> or /jph <block>" ,
+                                        "Now JumpPads are enable : " + toogleJumpPads ,
+                                        "To toggle JumpPads use /jptoggle or /jpt" ,
                                         "To jump use /jump or /j");
         }
         //End commands ecexute voids

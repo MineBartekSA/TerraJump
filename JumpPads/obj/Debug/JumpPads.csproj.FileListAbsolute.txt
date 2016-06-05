@@ -10,3 +10,13 @@ C:\Users\Andrzej\Documents\Visual Studio 2015\Projects\Tshock\TshockPlugin\Tshoc
 C:\Users\Andrzej\Documents\Visual Studio 2015\Projects\Tshock\TshockPlugin\TshockPlugin\obj\Debug\JumpPads.csprojResolveAssemblyReference.cache
 C:\Users\Andrzej\Documents\Visual Studio 2015\Projects\Tshock\TshockPlugin\TshockPlugin\obj\Debug\JumpPads.dll
 C:\Users\Andrzej\Documents\Visual Studio 2015\Projects\Tshock\TshockPlugin\TshockPlugin\obj\Debug\JumpPads.pdb
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\bin\Debug\JumpPads.dll
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\bin\Debug\JumpPads.pdb
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\bin\Debug\MySql.Data.dll
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\bin\Debug\HttpServer.dll
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\bin\Debug\BCrypt.Net.dll
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\bin\Debug\Mono.Data.Sqlite.dll
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\obj\Debug\JumpPads.csprojResolveAssemblyReference.cache
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\obj\Debug\JumpPads.dll
+C:\Users\Andrzej\Source\Repos\JumpPads\JumpPads\obj\Debug\JumpPads.pdb
