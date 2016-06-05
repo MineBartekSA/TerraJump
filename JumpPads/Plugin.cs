@@ -7,10 +7,10 @@ using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 
-namespace JumpPads
+namespace TerraJump
 {
     [ApiVersion(1, 23)]
-    public class JumpPads : TerrariaPlugin
+    public class TerraJump : TerrariaPlugin
     {
         //Strings, ints, bools
 
@@ -18,7 +18,7 @@ namespace JumpPads
         private TSPlayer play;
         private static Timer updateTimer;
         private string _jump = Path.Combine(TShock.SavePath, "Jump.txt");
-        private string _configFilePath = Path.Combine(TShock.SavePath, "JumpPads.json");
+        private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private bool toogleJumpPads = true;
         private string JBID = "193";
         private int height = 500000;
@@ -27,7 +27,7 @@ namespace JumpPads
         //Load stage
         public override string Name
         {
-            get { return "JumpPads"; }
+            get { return "TerraJump"; }
         }
         public override Version Version
         {
@@ -41,7 +41,7 @@ namespace JumpPads
         {
             get { return "It's simple JumpPads plugn for Tshock!"; }
         }
-        public JumpPads(Main game) : base(game)
+        public TerraJump(Main game) : base(game)
         {
             //Nothing!
         }
@@ -94,7 +94,7 @@ namespace JumpPads
                 StreamReader sr = new StreamReader(File.OpenRead(path));
                 //Read Toggle
                 var reader = sr.ReadLine();
-                reader = reader.Replace("ToggleJumpPads = ", "");
+                reader = reader.Replace("ToggleTerraJump = ", "");
                 if (reader == "true")
                     toogleJumpPads = true;
                 else if (reader == "false")
@@ -110,7 +110,7 @@ namespace JumpPads
                 //End Read
                 sr.Close();
                 TShock.Log.Info("Loading Config Complited!");
-                TShock.Log.Info("Toogle JumpPads = " + toogleJumpPads);
+                TShock.Log.Info("Toogle TerraJump = " + toogleJumpPads);
                 //TShock.Log.Info("JumpPadsBlock = " + JBID);
                 TShock.Log.Info("Height = " + height);
                 //End of Load config
@@ -121,7 +121,7 @@ namespace JumpPads
                 //Creating config
                 TShock.Log.Info("Creating Config");
                 StreamWriter sw = new StreamWriter(File.Create(path));
-                sw.WriteLine("ToogleJumpPads = " + toogleJumpPads);
+                sw.WriteLine("ToogleTerraJump = " + toogleJumpPads);
                 //sw.WriteLine("JupmPadsBlock = " + JBID);
                 sw.WriteLine("Height = " + height);
                 sw.Close();
@@ -133,29 +133,29 @@ namespace JumpPads
         //Commmands void
         void OnInitialize(EventArgs args)
         {
-            Commands.ChatCommands.Add(new Command("jumppads.admin.toggle", toggleJP, "jptoggle", "jpt")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.toggle", toggleJP, "tjtoggle", "tjt")
             {
-                HelpText = "Turns on/off JumpPads."
+                HelpText = "Turns on/off TerraJump."
             });
-            /*Commands.ChatCommands.Add(new Command("jumppads.admin.edit", editJPB, "jpblock")
+            /*Commands.ChatCommands.Add(new Command("terrajump.admin.edit", editJPB, "tjblock")
             {
                 HelpText = "Edit block of JumpPdas."
             });*/
-            Commands.ChatCommands.Add(new Command("jumppads.admin.editH", editH, "jpheight", "jph")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.editH", editH, "tjheight", "tjh")
             {
                 HelpText = "Edit height of jump."
             });
-            Commands.ChatCommands.Add(new Command("jumppads.admin.reload", reload, "jpreload", "jpr")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.reload", reload, "tjreload", "tjr")
             {
                 HelpText = "Reload config."
             });
-            Commands.ChatCommands.Add(new Command("jumppads.use", runPlayerUpdate, "jump", "j")
+            Commands.ChatCommands.Add(new Command("terrajump.use", runPlayerUpdate, "jump", "j")
             { 
                 HelpText = "Jump command!"
             });
-            Commands.ChatCommands.Add(new Command("", Info, "jumppads", "jp")
+            Commands.ChatCommands.Add(new Command("", Info, "terrajump", "jp")
             {
-                HelpText = "Information of JumpPads"
+                HelpText = "Information of TerraJump"
             });
         }
         //End Command void
@@ -165,13 +165,13 @@ namespace JumpPads
             toogleJumpPads = !toogleJumpPads;
             //Saving changes
             StreamWriter sw = new StreamWriter(File.Create(_configFilePath));
-            sw.WriteLine("ToogleJumpPads = " + toogleJumpPads);
+            sw.WriteLine("ToogleTerraJump = " + toogleJumpPads);
             //sw.WriteLine("JupmPadsBlock = " + JBID);
             sw.WriteLine("Height = " + height);
             sw.Close();
             //End of saving
-            TShock.Log.ConsoleInfo(args.Player.Name + " toggle JumpPads");
-            args.Player.SendSuccessMessage("Succes of toggleing JumpPads. Now is {0}",
+            TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
+            args.Player.SendSuccessMessage("Succes of toggleing TerraJump. Now is {0}",
                 (toogleJumpPads) ? "ON" : "OFF");
         }
         /*void editJPB(CommandArgs args)
@@ -185,7 +185,7 @@ namespace JumpPads
             height = (int)a;
             TShock.Log.ConsoleInfo("Height set as " + a);
             StreamWriter sw = new StreamWriter(File.Create(_configFilePath));
-            sw.WriteLine("ToogleJumpPads = " + toogleJumpPads);
+            sw.WriteLine("ToogleTerraJump = " + toogleJumpPads);
             sw.WriteLine("Height = " + height);
             sw.Close();
         }
@@ -217,7 +217,7 @@ namespace JumpPads
             args.Player.SendInfoMessage("Now height is" + height ,
                                         "To change height use /jpheight <block> or /jph <block>" ,
                                         "Now JumpPads are enable : " + toogleJumpPads ,
-                                        "To toggle JumpPads use /jptoggle or /jpt" ,
+                                        "To toggle TerraJump use /jptoggle or /jpt",
                                         "To jump use /jump or /j");
         }
         //End commands ecexute voids
