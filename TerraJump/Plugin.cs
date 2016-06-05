@@ -21,7 +21,7 @@ namespace TerraJump
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private bool toogleJumpPads = true;
         private string JBID = "193";
-        private int height = 500000;
+        private int height = 20;
 
         //End of this :D
         //Load stage
