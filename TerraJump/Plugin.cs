@@ -31,7 +31,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(1, 0, 0); }
+            get { return new Version(1, 0, 2); }
         }
         public override string Author
         {
@@ -214,11 +214,11 @@ namespace TerraJump
         }
         void Info (CommandArgs args)
         {
-            args.Player.SendInfoMessage("Now height is" + height ,
-                                        "To change height use /jpheight <block> or /jph <block>" ,
-                                        "Now JumpPads are enable : " + toogleJumpPads ,
-                                        "To toggle TerraJump use /jptoggle or /jpt",
-                                        "To jump use /jump or /j");
+            args.Player.SendInfoMessage("Now height is " + height);
+            args.Player.SendInfoMessage("To change height use /jpheight <block> or /jph <block>");
+            args.Player.SendInfoMessage("Now TerraJump are enable : " + toogleJumpPads);
+            args.Player.SendInfoMessage("To toggle TerraJump use /jptoggle or /jpt");
+            args.Player.SendInfoMessage("To jump use /jump or /j");
         }
         //End commands ecexute voids
         //Presure Plate trigger
