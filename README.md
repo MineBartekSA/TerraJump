@@ -1,1 +1,5 @@
-This is a repo of JumpPads plugin for TShock
+========
+TerraJump
+========
+
+This is a repo of TerraJump plugin for TShock
