@@ -1,8 +1,6 @@
 ﻿using System;
-using System.ComponentModel;
+using System.Threading;
 using System.IO;
-using System.Linq;
-using System.Timers;
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
@@ -16,12 +14,13 @@ namespace TerraJump
 
         private bool itsconfig = false;
         private TSPlayer play;
-        private static Timer updateTimer;
+        private static System.Timers.Timer updateTimer;
         private string _jump = Path.Combine(TShock.SavePath, "Jump.txt");
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private bool toogleJumpPads = true;
         private string JBID = "193";
         private int height = 20;
+        private string ver = "1.0.3";
 
         //End of this :D
         //Load stage
@@ -31,7 +30,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(1, 0, 2); }
+            get { return new Version(1, 0, 3); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -54,7 +53,7 @@ namespace TerraJump
             //Hooks
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             ServerApi.Hooks.PlayerTriggerPressurePlate.Register(this, OnTriggerPressurePlate);
-            ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
+            //ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
             //ServerApi.Hooks.ProjectileTriggerPressurePlate
         }
         protected override void Dispose(bool disposing)
@@ -63,7 +62,7 @@ namespace TerraJump
             {
                 //UnHooks
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
-                ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
+                //ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
                 ServerApi.Hooks.PlayerTriggerPressurePlate.Deregister(this, OnTriggerPressurePlate);
             }
             base.Dispose(disposing);
@@ -210,14 +209,19 @@ namespace TerraJump
             if (!toogleJumpPads)
                 return;
             play = args.Player;
-            updateTimer.Start();
+            Thread.Sleep(500);
+            play.TPlayer.velocity.Y = play.TPlayer.velocity.Y - height;
+            TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", play.Index);
+            play.SendInfoMessage("Jump!");
+            //updateTimer.Start();
         }
         void Info (CommandArgs args)
         {
-            args.Player.SendInfoMessage("Now height is " + height);
-            args.Player.SendInfoMessage("To change height use /jpheight <block> or /jph <block>");
+            args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
+            args.Player.SendInfoMessage("Now height is a " + height);
             args.Player.SendInfoMessage("Now TerraJump are enable : " + toogleJumpPads);
-            args.Player.SendInfoMessage("To toggle TerraJump use /jptoggle or /jpt");
+            args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
+            args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
             args.Player.SendInfoMessage("To jump use /jump or /j");
         }
         //End commands ecexute voids
@@ -230,7 +234,7 @@ namespace TerraJump
         }
         //End presure plate trigger
         //Other
-        void OnPostInitialize(EventArgs args)
+        /*void OnPostInitialize(EventArgs args)
         {
             updateTimer = new Timer(500);
             updateTimer.Elapsed += UpdateTimerOnElapsed;
@@ -241,7 +245,7 @@ namespace TerraJump
             TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", play.Index);
             play.SendInfoMessage("Jump!");
             updateTimer.Stop();
-        }
+        }*/
     }
 
 }
