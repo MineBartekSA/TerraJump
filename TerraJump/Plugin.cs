@@ -4,6 +4,7 @@ using System.IO;
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
+using System.Collections.Generic;
 
 namespace TerraJump
 {
@@ -20,7 +21,7 @@ namespace TerraJump
         private bool toogleJumpPads = true;
         private string JBID = "193";
         private int height = 20;
-        private string ver = "1.0.3";
+        private string ver = "1.1.0";
 
         //End of this :D
         //Load stage
@@ -30,7 +31,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(1, 0, 3); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(1, 1, 0); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -156,6 +157,10 @@ namespace TerraJump
             {
                 HelpText = "Information of TerraJump"
             });
+            Commands.ChatCommands.Add(new Command("", skyJump, "spacelaunch", "sl")
+            {
+                HelpText = "Launch your victim in to space!"
+            });
         }
         //End Command void
         //Commands execute voids
@@ -223,6 +228,21 @@ namespace TerraJump
             args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
             args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
             args.Player.SendInfoMessage("To jump use /jump or /j");
+        }
+        void skyJump (CommandArgs args)
+        {
+            if (args.Player.RealPlayer)
+            {
+                args.Player.SendErrorMessage("You must run this command from the console.");
+                return;
+            }
+            //TShock.Utils.FindPlayer(args.Parameters[0]); Use this
+            foreach(var a in TShock.Utils.FindPlayer(args.Parameters[0]))
+            {
+                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 100;
+                a.SendInfoMessage("You have been launch in to space! Hahahahahaha!");
+                args.Player.SendInfoMessage(a.ToString() + " is in space now!");
+            }
         }
         //End commands ecexute voids
         //Presure Plate trigger
