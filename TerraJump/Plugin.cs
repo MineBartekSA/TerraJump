@@ -237,11 +237,12 @@ namespace TerraJump
                 return;
             }
             //TShock.Utils.FindPlayer(args.Parameters[0]); Use this
-            foreach(var a in TShock.Utils.FindPlayer(args.Parameters[0]))
+            foreach(TSPlayer a in TShock.Utils.FindPlayer(args.Parameters[0]))
             {
-                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 100;
+                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 200;
+                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 200;
                 a.SendInfoMessage("You have been launch in to space! Hahahahahaha!");
-                args.Player.SendInfoMessage(a.ToString() + " is in space now!");
+                args.Player.SendInfoMessage(args.Parameters[0].ToString() + " is in space now!");
             }
         }
         //End commands ecexute voids
