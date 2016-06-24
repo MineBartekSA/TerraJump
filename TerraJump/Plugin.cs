@@ -53,9 +53,8 @@ namespace TerraJump
             load_createConfigFile(_configFilePath);
             //Hooks
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
-            ServerApi.Hooks.PlayerTriggerPressurePlate.Register(this, OnTriggerPressurePlate);
-            //ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
-            //ServerApi.Hooks.ProjectileTriggerPressurePlate
+            ServerApi.Hooks.PlayerTriggerPressurePlate.Register(this, OnPlayerTriggerPressurePlate);
+            ServerApi.Hooks.ProjectileTriggerPressurePlate.Register(this, OnProjectileTriggerPressurePlate);
         }
         protected override void Dispose(bool disposing)
         {
@@ -63,13 +62,19 @@ namespace TerraJump
             {
                 //UnHooks
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
-                //ServerApi.Hooks.GamePostInitialize.Register(this, OnPostInitialize);
-                ServerApi.Hooks.PlayerTriggerPressurePlate.Deregister(this, OnTriggerPressurePlate);
+                ServerApi.Hooks.PlayerTriggerPressurePlate.Deregister(this, OnPlayerTriggerPressurePlate);
+                ServerApi.Hooks.ProjectileTriggerPressurePlate.Deregister(this, OnProjectileTriggerPressurePlate);
             }
             base.Dispose(disposing);
         }
         //End Load stage
+
+
+
         //Voids
+
+
+
         //Configs voids
         void checkConfigFile(string path)
         {
@@ -130,6 +135,9 @@ namespace TerraJump
             }
         }
         //End of configs voids
+
+
+
         //Commmands void
         void OnInitialize(EventArgs args)
         {
@@ -161,8 +169,18 @@ namespace TerraJump
             {
                 HelpText = "Launch your victim in to space!"
             });
+            //For Dev! Only!
+            // /*
+            Commands.ChatCommands.Add(new Command("terrajump.dev", y, "gety", "gy", "y")
+            {
+                HelpText = "Honly for dev!"
+            });
+            // */
         }
         //End Command void
+
+
+
         //Commands execute voids
         void toggleJP(CommandArgs args)
         {
@@ -239,22 +257,131 @@ namespace TerraJump
             //TShock.Utils.FindPlayer(args.Parameters[0]); Use this
             foreach(TSPlayer a in TShock.Utils.FindPlayer(args.Parameters[0]))
             {
-                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 200;
-                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 200;
+                //TP to surface
+                up(args.Player);
+                Thread.Sleep(100);
+                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 1000;
+                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", a.Index);
+                Thread.Sleep(200);
+                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 1000;
+                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", a.Index);
                 a.SendInfoMessage("You have been launch in to space! Hahahahahaha!");
-                args.Player.SendInfoMessage(args.Parameters[0].ToString() + " is in space now!");
+                args.Player.SendInfoMessage(a.Name + " is in space now!");
             }
         }
-        //End commands ecexute voids
-        //Presure Plate trigger
-        void OnTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
+        void y(CommandArgs arg)
         {
-                var playerPos = args.Object.position;
-                Tile pressurePlate = Main.tile[args.TileX, args.TileY];
-                Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
+            float y = arg.TPlayer.position.Y;
+            arg.Player.SendInfoMessage("Your Y posision is now : " + y);
         }
-        //End presure plate trigger
-        //Other
+        //End commands ecexute voids
+
+
+
+        //Presure Plate trigger void
+        void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
+        {
+            var playerPos = args.Object.position;
+            Tile pressurePlate = Main.tile[args.TileX, args.TileY];
+            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
+        }
+        //End presure plate trigger void
+
+        
+        
+        //Projectile triggered pressure plate VOID
+        void OnProjectileTriggerPressurePlate(TriggerPressurePlateEventArgs<Projectile> args)
+        {
+            bool pds = false;
+            TSPlayer ow = TShock.Players[args.Object.owner];
+            Tile pressurePlate = Main.tile[args.TileX, args.TileY];
+            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
+            Tile upBlock = Main.tile[args.TileX, args.TileY - 1];
+            Tile leftBlock = Main.tile[args.TileX + 1, args.TileY];
+            Tile rightBlock = Main.tile[args.TileX - 1, args.TileY];
+            if (underBlock.type == Terraria.ID.TileID.SlimeBlock)
+            {
+                bool ulb = false;
+                bool urb  = false;
+                Tile underLeftBlock = Main.tile[args.TileX + 1, args.TileY + 1];
+                Tile underRightBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+                if (underLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
+                    ulb = true;
+                if (underRightBlock.type == Terraria.ID.TileID.SlimeBlock)
+                    urb = true;
+                if (ulb && urb)
+                    pds = true;
+            }
+            else if (upBlock.type == Terraria.ID.TileID.SlimeBlock)
+            {
+                bool ulb = false;
+                bool urb = false;
+                Tile upLeftBlock = Main.tile[args.TileX + 1, args.TileY - 1];
+                Tile upRightBlock = Main.tile[args.TileX - 1, args.TileY - 1];
+                if (upLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
+                    ulb = true;
+                if (upRightBlock.type == Terraria.ID.TileID.SlimeBlock)
+                    urb = true;
+                if (ulb && urb)
+                    pds = true;
+            }
+            else if (leftBlock.type == Terraria.ID.TileID.SlimeBlock)
+            {
+                bool ulb = false;
+                bool urb = false;
+                Tile leftUpBlock = Main.tile[args.TileX + 1, args.TileY - 1];
+                Tile leftUnderBlock = Main.tile[args.TileX + 1, args.TileY + 1];
+                if (leftUpBlock.type == Terraria.ID.TileID.SlimeBlock)
+                    ulb = true;
+                if (leftUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
+                    urb = true;
+                if (ulb && urb)
+                    pds = true;
+            }
+            else if (rightBlock.type == Terraria.ID.TileID.SlimeBlock)
+            {
+                bool ulb = false;
+                bool urb = false;
+                Tile rightUpBlock = Main.tile[args.TileX - 1, args.TileY - 1];
+                Tile rightUnderBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+                if (rightUpBlock.type == Terraria.ID.TileID.SlimeBlock)
+                    ulb = true;
+                if (rightUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
+                    urb = true;
+                if (ulb && urb)
+                    pds = true;
+            }
+            else
+            {
+                return;
+            }
+
+            if (pds)
+            {
+                ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
+                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
+                ow.SendInfoMessage("Jump!");
+            }
+        }
+        //End projectile triggered pressure plate VOID
+
+        
+        
+        //Other Voids
+        void up (TSPlayer player)
+        {
+            float x = player.TPlayer.position.X;
+            float pos = player.TPlayer.position.Y;
+            if(pos < 5478)
+            {
+                player.Teleport(x, 5478);
+            }
+            else if (pos >= 5478)
+            {
+                return;
+            }
+
+        }
         /*void OnPostInitialize(EventArgs args)
         {
             updateTimer = new Timer(500);
@@ -267,6 +394,7 @@ namespace TerraJump
             play.SendInfoMessage("Jump!");
             updateTimer.Stop();
         }*/
+        //End fo Voids
     }
 
 }
