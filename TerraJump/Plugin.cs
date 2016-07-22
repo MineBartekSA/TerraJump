@@ -4,7 +4,6 @@ using System.IO;
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
-using System.Collections.Generic;
 
 namespace TerraJump
 {
@@ -21,7 +20,8 @@ namespace TerraJump
         private bool toogleJumpPads = true;
         private string JBID = "193";
         private int height = 20;
-        private string ver = "1.1.0";
+        private string ver = "1.2.0";
+        private bool projectileTriggerEnable;
 
         //End of this :D
         //Load stage
@@ -31,7 +31,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(1, 1, 0); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(1, 2, 0); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -143,7 +143,7 @@ namespace TerraJump
         {
             Commands.ChatCommands.Add(new Command("terrajump.admin.toggle", toggleJP, "tjtoggle", "tjt")
             {
-                HelpText = "Turns on/off TerraJump."
+                HelpText = "Turns on/off TerraJump"
             });
             /*Commands.ChatCommands.Add(new Command("terrajump.admin.edit", editJPB, "tjblock")
             {
@@ -151,11 +151,11 @@ namespace TerraJump
             });*/
             Commands.ChatCommands.Add(new Command("terrajump.admin.editH", editH, "tjheight", "tjh")
             {
-                HelpText = "Edit height of jump."
+                HelpText = "Edit height of jump"
             });
             Commands.ChatCommands.Add(new Command("terrajump.admin.reload", reload, "tjreload", "tjr")
             {
-                HelpText = "Reload config."
+                HelpText = "Reload config"
             });
             Commands.ChatCommands.Add(new Command("terrajump.use", runPlayerUpdate, "jump", "j")
             { 
@@ -169,11 +169,15 @@ namespace TerraJump
             {
                 HelpText = "Launch your victim in to space!"
             });
+            Commands.ChatCommands.Add(new Command("terrajump.admin.projectileToggle", projTog, "tjprojectiletoggle", "tjpt")
+            {
+                HelpText = "Turns on/off TerraJump projectile jumps"
+            });
             //For Dev! Only!
             // /*
             Commands.ChatCommands.Add(new Command("terrajump.dev", y, "gety", "gy", "y")
             {
-                HelpText = "Honly for dev!"
+                HelpText = "Only for dev!"
             });
             // */
         }
@@ -196,11 +200,18 @@ namespace TerraJump
             args.Player.SendSuccessMessage("Succes of toggleing TerraJump. Now is {0}",
                 (toogleJumpPads) ? "ON" : "OFF");
         }
-        /*void editJPB(CommandArgs args)
+        void projTog(CommandArgs args)
         {
+            projectileTriggerEnable = !projectileTriggerEnable;
+            TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
+            args.Player.SendSuccessMessage("Succes of toggleing projectile jumps. Now is {0}",
+                (toogleJumpPads) ? "ON" : "OFF");
+        }
+            /*void editJPB(CommandArgs args)
+            {
 
-        }*/
-        void editH(CommandArgs args)
+            }*/
+            void editH(CommandArgs args)
         {
             float a = float.Parse(args.Parameters[0]);
             args.Player.SendInfoMessage("You set height as " + a);
@@ -243,6 +254,7 @@ namespace TerraJump
             args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
             args.Player.SendInfoMessage("Now height is a " + height);
             args.Player.SendInfoMessage("Now TerraJump are enable : " + toogleJumpPads);
+            args.Player.SendInfoMessage("Now projectile jumos are enable : " + projectileTriggerEnable);
             args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
             args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
             args.Player.SendInfoMessage("To jump use /jump or /j");
@@ -259,6 +271,7 @@ namespace TerraJump
             {
                 //TP to surface
                 up(args.Player);
+                //Jump
                 Thread.Sleep(100);
                 a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 1000;
                 TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", a.Index);
@@ -281,9 +294,7 @@ namespace TerraJump
         //Presure Plate trigger void
         void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
         {
-            var playerPos = args.Object.position;
-            Tile pressurePlate = Main.tile[args.TileX, args.TileY];
-            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
+            // Wait for hook!
         }
         //End presure plate trigger void
 
@@ -292,6 +303,8 @@ namespace TerraJump
         //Projectile triggered pressure plate VOID
         void OnProjectileTriggerPressurePlate(TriggerPressurePlateEventArgs<Projectile> args)
         {
+            if (!projectileTriggerEnable)
+                return;
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.owner];
             Tile pressurePlate = Main.tile[args.TileX, args.TileY];
@@ -382,7 +395,7 @@ namespace TerraJump
             }
 
         }
-        /*void OnPostInitialize(EventArgs args)
+        /*void OnPostInitialize(EventArgs args)    // Old metod
         {
             updateTimer = new Timer(500);
             updateTimer.Elapsed += UpdateTimerOnElapsed;
