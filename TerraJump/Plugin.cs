@@ -16,10 +16,11 @@ namespace TerraJump
         private TSPlayer play;
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private bool toogleJumpPads = true;
-       // private string JBID = "193";
+        private string JBID = "193";
         private int height = 20;
-        private string ver = "1.2.0";
+        private string ver = "2.0.0";
         private bool projectileTriggerEnable;
+        private bool pressureTriggerEnable = true;
 
         //End of this :D
         //Load stage
@@ -29,7 +30,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(1, 2, 0); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 0, 0); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -45,7 +46,6 @@ namespace TerraJump
         }
         public override void Initialize()
         {
-            //throw new System.NotImplementedException();
             //Loading configs
             checkConfigFile(_configFilePath);
             load_createConfigFile(_configFilePath);
@@ -110,12 +110,20 @@ namespace TerraJump
                 reader = sr.ReadLine();
                 reader = reader.Replace("Height = ", "");
                 height = Int32.Parse(reader);
+                //Read Pressure Plate Jump Toggle
+                reader = sr.ReadLine();
+                reader = reader.Replace("ToggleRessureJump = ", "");
+                if (reader == "true")
+                    toogleJumpPads = true;
+                else if (reader == "false")
+                    toogleJumpPads = false;
                 //End Read
                 sr.Close();
                 TShock.Log.Info("Loading Config Complited!");
                 TShock.Log.Info("Toogle TerraJump = " + toogleJumpPads);
                 //TShock.Log.Info("JumpPadsBlock = " + JBID);
                 TShock.Log.Info("Height = " + height);
+                TShock.Log.Info("Toggle PressurePlateJumps = " + pressureTriggerEnable);
                 //End of Load config
             }
 
@@ -124,9 +132,10 @@ namespace TerraJump
                 //Creating config
                 TShock.Log.Info("Creating Config");
                 StreamWriter sw = new StreamWriter(File.Create(path));
-                sw.WriteLine("ToogleTerraJump = " + toogleJumpPads);
+                sw.WriteLine("ToggleTerraJump = " + toogleJumpPads);
                 //sw.WriteLine("JupmPadsBlock = " + JBID);
                 sw.WriteLine("Height = " + height);
+                sw.WriteLine("ToggleRessureJump = " + pressureTriggerEnable);
                 sw.Close();
                 TShock.Log.Info("Config File created!");
                 //End of Creating Config
@@ -167,21 +176,21 @@ namespace TerraJump
             {
                 HelpText = "Launch your victim in to space!"
             });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.projectileToggle", projTog, "tjprojectiletoggle", "tjpt")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.pressuretoggle", projTog, "tjpressuretoggle", "tjpt")
             {
-                HelpText = "Turns on/off TerraJump projectile jumps"
+                HelpText = "Turns on/off TerraJump pressure plate jumps"
             });
-            Commands.ChatCommands.Add(new Command("", re, "re", "reverse")
+           /* Commands.ChatCommands.Add(new Command("", re, "re", "reverse")
             {
                 HelpText = "For fun! It reverse text and send it!"
-            });
+            });*/
             //For Dev! Only!
-            // /*
+             /*
             Commands.ChatCommands.Add(new Command("terrajump.dev", y, "gety", "gy", "y")
             {
                 HelpText = "Only for dev!"
             });
-            // */
+             */
         }
         //End Command void
 
@@ -196,6 +205,7 @@ namespace TerraJump
             sw.WriteLine("ToogleTerraJump = " + toogleJumpPads);
             //sw.WriteLine("JupmPadsBlock = " + JBID);
             sw.WriteLine("Height = " + height);
+            sw.WriteLine("ToggleRessureJump = " + pressureTriggerEnable);
             sw.Close();
             //End of saving
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
@@ -256,7 +266,7 @@ namespace TerraJump
             args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
             args.Player.SendInfoMessage("Now height is a " + height);
             args.Player.SendInfoMessage("Now TerraJump are enable : " + toogleJumpPads);
-            args.Player.SendInfoMessage("Now projectile jumos are enable : " + projectileTriggerEnable);
+            args.Player.SendInfoMessage("Now pressure jumps are enable : " + pressureTriggerEnable);
             args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
             args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
             args.Player.SendInfoMessage("To jump use /jump or /j");
@@ -293,16 +303,24 @@ namespace TerraJump
         {
             string par = "";
             string rew = "";
+            char[] wleng;
             int list = arg.Parameters.Count;
+            TShock.Log.Info("You have created a " + list + " parametrs!");
             for (int i = list - 1; i >= 0; i--)
             {
                 string word = arg.Parameters[i];
+                TShock.Log.Info("Word for now is " + word + "!");
+                wleng = word.ToCharArray();
+                TShock.Log.Info("World have " + wleng + " characters!");
                 for (int ii = word.Length - 1; ii >= 0; ii--)
-                    rew += word[i];
+                    rew += wleng[i];
+                TShock.Log.Info("Reversing complete! Now is " + rew + "!");
                 par += rew;
                 rew = "";
             }
+            TShock.Log.Info("Reversing all world complete!");
             arg.Player.SendMessageFromPlayer(par,255,255,255,1);
+            TShock.Log.Info("Reversing sending complete!");
         }
         //End commands ecexute voids
 
@@ -311,7 +329,7 @@ namespace TerraJump
         //Presure Plate trigger void
         void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
         {
-            if (!projectileTriggerEnable)
+            if (!pressureTriggerEnable)
                 return;
             TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
