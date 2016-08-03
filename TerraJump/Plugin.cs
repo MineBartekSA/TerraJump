@@ -14,11 +14,9 @@ namespace TerraJump
 
         private bool itsconfig = false;
         private TSPlayer play;
-        private static System.Timers.Timer updateTimer;
-        private string _jump = Path.Combine(TShock.SavePath, "Jump.txt");
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private bool toogleJumpPads = true;
-        private string JBID = "193";
+       // private string JBID = "193";
         private int height = 20;
         private string ver = "1.2.0";
         private bool projectileTriggerEnable;
@@ -173,6 +171,10 @@ namespace TerraJump
             {
                 HelpText = "Turns on/off TerraJump projectile jumps"
             });
+            Commands.ChatCommands.Add(new Command("", re, "re", "reverse")
+            {
+                HelpText = "For fun! It reverse text and send it!"
+            });
             //For Dev! Only!
             // /*
             Commands.ChatCommands.Add(new Command("terrajump.dev", y, "gety", "gy", "y")
@@ -275,9 +277,9 @@ namespace TerraJump
                 Thread.Sleep(100);
                 a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 1000;
                 TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", a.Index);
-                Thread.Sleep(200);
+                /*Thread.Sleep(200);
                 a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 1000;
-                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", a.Index);
+                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", a.Index);*/
                 a.SendInfoMessage("You have been launch in to space! Hahahahahaha!");
                 args.Player.SendInfoMessage(a.Name + " is in space now!");
             }
@@ -287,6 +289,21 @@ namespace TerraJump
             float y = arg.TPlayer.position.Y;
             arg.Player.SendInfoMessage("Your Y posision is now : " + y);
         }
+        void re(CommandArgs arg)
+        {
+            string par = "";
+            string rew = "";
+            int list = arg.Parameters.Count;
+            for (int i = list - 1; i >= 0; i--)
+            {
+                string word = arg.Parameters[i];
+                for (int ii = word.Length - 1; ii >= 0; ii--)
+                    rew += word[i];
+                par += rew;
+                rew = "";
+            }
+            arg.Player.SendMessageFromPlayer(par,255,255,255,1);
+        }
         //End commands ecexute voids
 
 
@@ -294,7 +311,117 @@ namespace TerraJump
         //Presure Plate trigger void
         void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
         {
-            // Wait for hook!
+            if (!projectileTriggerEnable)
+                return;
+            TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
+            bool pds = false;
+            TSPlayer ow = TShock.Players[args.Object.whoAmI];
+            Tile pressurePlate = Main.tile[args.TileX, args.TileY];
+            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
+            Tile upBlock = Main.tile[args.TileX, args.TileY - 1];
+            Tile leftBlock = Main.tile[args.TileX + 1, args.TileY];
+            Tile rightBlock = Main.tile[args.TileX - 1, args.TileY];
+            if (underBlock.type == Terraria.ID.TileID.SlimeBlock)
+            {
+                TShock.Log.ConsoleInfo("[PlTPP]O on 'Under' this slime block are!");
+                bool ulb = false;
+                bool urb = false;
+                Tile underLeftBlock = Main.tile[args.TileX + 1, args.TileY + 1];
+                Tile underRightBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+                if (underLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
+                    ulb = true;
+                }
+                if (underRightBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PlTPP]Ok on right!");
+                    urb = true;
+                }
+                if (ulb && urb)
+                    pds = true;
+                else
+                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
+            }
+            else if (upBlock.type == Terraria.ID.TileID.SlimeBlock)
+            {
+                TShock.Log.ConsoleInfo("[PlTPP]O on 'Up' this slime block are!");
+                bool ulb = false;
+                bool urb = false;
+                Tile upLeftBlock = Main.tile[args.TileX + 1, args.TileY - 1];
+                Tile upRightBlock = Main.tile[args.TileX - 1, args.TileY - 1];
+                if (upLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
+                    ulb = true;
+                }
+                if (upRightBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PlTPP]Ok on right!");
+                    urb = true;
+                }
+                if (ulb && urb)
+                    pds = true;
+                else
+                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
+            }
+            else if (leftBlock.type == Terraria.ID.TileID.SlimeBlock)
+            {
+                TShock.Log.ConsoleInfo("[PlTPP]O on 'Left' this slime block are!");
+                bool ulb = false;
+                bool urb = false;
+                Tile leftUpBlock = Main.tile[args.TileX + 1, args.TileY - 1];
+                Tile leftUnderBlock = Main.tile[args.TileX + 1, args.TileY + 1];
+                if (leftUpBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PlTPP]Ok on up!");
+                    ulb = true;
+                }
+                if (leftUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PlTPP]Ok on under!");
+                    urb = true;
+                }
+                if (ulb && urb)
+                    pds = true;
+                else
+                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
+            }
+            else if (rightBlock.type == Terraria.ID.TileID.SlimeBlock)
+            {
+                TShock.Log.ConsoleInfo("[PlTPP]O on 'Right' thsi slime block are!");
+                bool ulb = false;
+                bool urb = false;
+                Tile rightUpBlock = Main.tile[args.TileX - 1, args.TileY - 1];
+                Tile rightUnderBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+                if (rightUpBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PlTPP]Ok on up!");
+                    ulb = true;
+                }
+                if (rightUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PlTPP]Ok on under!");
+                    urb = true;
+                }
+                if (ulb && urb)
+                    pds = true;
+                else
+                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
+            }
+            else
+            {
+                TShock.Log.ConsoleInfo("[PlTPP]Can't find any SlimeBlocks! Stoping");
+                return;
+            }
+
+            if (pds)
+            {
+                ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
+                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
+                TShock.Log.ConsoleInfo("[PlTPP]Wooh! Procedure succesfull finish!");
+                ow.SendInfoMessage("Jump!");
+            }
         }
         //End presure plate trigger void
 
@@ -305,6 +432,7 @@ namespace TerraJump
         {
             if (!projectileTriggerEnable)
                 return;
+            TShock.Log.ConsoleInfo("[PTPP]Starting procedure");
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.owner];
             Tile pressurePlate = Main.tile[args.TileX, args.TileY];
@@ -314,58 +442,95 @@ namespace TerraJump
             Tile rightBlock = Main.tile[args.TileX - 1, args.TileY];
             if (underBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
+                TShock.Log.ConsoleInfo("[PTPP]O on 'Under' this slime block are!");
                 bool ulb = false;
                 bool urb  = false;
                 Tile underLeftBlock = Main.tile[args.TileX + 1, args.TileY + 1];
                 Tile underRightBlock = Main.tile[args.TileX - 1, args.TileY + 1];
                 if (underLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PTPP]Ok on left!");
                     ulb = true;
+                }
                 if (underRightBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PTPP]Ok on right!");
                     urb = true;
+                } 
                 if (ulb && urb)
                     pds = true;
+                else
+                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
             }
             else if (upBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
+                TShock.Log.ConsoleInfo("[PTPP]O on 'Up' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile upLeftBlock = Main.tile[args.TileX + 1, args.TileY - 1];
                 Tile upRightBlock = Main.tile[args.TileX - 1, args.TileY - 1];
                 if (upLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PTPP]Ok on left!");
                     ulb = true;
+                }
                 if (upRightBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PTPP]Ok on right!");
                     urb = true;
+                }
                 if (ulb && urb)
                     pds = true;
+                else
+                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
             }
             else if (leftBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
+                TShock.Log.ConsoleInfo("[PTPP]O on 'Left' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile leftUpBlock = Main.tile[args.TileX + 1, args.TileY - 1];
                 Tile leftUnderBlock = Main.tile[args.TileX + 1, args.TileY + 1];
                 if (leftUpBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PTPP]Ok on up!");
                     ulb = true;
+                }
                 if (leftUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PTPP]Ok on under!");
                     urb = true;
+                }
                 if (ulb && urb)
                     pds = true;
+                else
+                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
             }
             else if (rightBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
+                TShock.Log.ConsoleInfo("[PTPP]O on 'Right' thsi slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile rightUpBlock = Main.tile[args.TileX - 1, args.TileY - 1];
                 Tile rightUnderBlock = Main.tile[args.TileX - 1, args.TileY + 1];
                 if (rightUpBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PTPP]Ok on up!");
                     ulb = true;
+                }
                 if (rightUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
+                {
+                    TShock.Log.ConsoleInfo("[PTPP]Ok on under!");
                     urb = true;
+                }
                 if (ulb && urb)
                     pds = true;
+                else
+                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
             }
             else
             {
+                TShock.Log.ConsoleInfo("[PTPP]Can't find any SlimeBlocks! Stoping");
                 return;
             }
 
@@ -373,6 +538,7 @@ namespace TerraJump
             {
                 ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
                 TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
+                TShock.Log.ConsoleInfo("[PTPP]Wooh! Procedure succesfull finish!");
                 ow.SendInfoMessage("Jump!");
             }
         }

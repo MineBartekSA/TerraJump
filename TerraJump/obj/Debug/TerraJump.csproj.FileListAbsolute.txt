@@ -18,3 +18,5 @@ C:\Users\Andrzej\Source\Repos\TerraJump\TerraJump\bin\Debug\Mono.Data.Sqlite.dll
 C:\Users\Andrzej\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.csprojResolveAssemblyReference.cache
 C:\Users\Andrzej\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.dll
 C:\Users\Andrzej\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.pdb
+C:\Users\Andrzej\Source\Repos\TerraJump\TerraJump\bin\Debug\TerrariaServer.exe
+C:\Users\Andrzej\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.dll
