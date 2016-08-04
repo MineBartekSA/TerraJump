@@ -11,16 +11,16 @@ namespace TerraJump
     public class TerraJump : TerrariaPlugin
     {
         //Strings, ints, bools
-
-        private bool itsconfig = false;
         private TSPlayer play;
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
-        private bool toogleJumpPads = true;
-        private string JBID = "193";
-        private int height = 20;
-        private string ver = "2.0.0";
+        private static Config conf;
+        private string ver = "2.0.1";
+        //Configs
+        private bool toggleJumpPads;
+        private string JBID;
+        private int height;
         private bool projectileTriggerEnable;
-        private bool pressureTriggerEnable = true;
+        private bool pressureTriggerEnable;
 
         //End of this :D
         //Load stage
@@ -30,7 +30,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 0, 0); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 0, 1); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -47,8 +47,12 @@ namespace TerraJump
         public override void Initialize()
         {
             //Loading configs
-            checkConfigFile(_configFilePath);
-            load_createConfigFile(_configFilePath);
+            conf = Config.loadProcedure(_configFilePath);
+            toggleJumpPads = conf.toggleJumpPads;
+            height = conf.height;
+            JBID = conf.JBID;
+            pressureTriggerEnable = conf.pressureTriggerEnable;
+            projectileTriggerEnable = conf.projectileTriggerEnable;
             //Hooks
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             ServerApi.Hooks.PlayerTriggerPressurePlate.Register(this, OnPlayerTriggerPressurePlate);
@@ -73,78 +77,6 @@ namespace TerraJump
 
 
 
-        //Configs voids
-        void checkConfigFile(string path)
-        {
-            if (File.Exists(path))
-            {
-                itsconfig = true;
-                TShock.Log.Info("Config File exist!");
-            }
-            
-            else
-            {
-                itsconfig = false;
-                TShock.Log.Error("Config File not exist!");
-            }
-        }
-        void load_createConfigFile(string path)
-        {
-            if(itsconfig)
-            {
-                //Load config
-                TShock.Log.Info("Starting Loading Config");
-                StreamReader sr = new StreamReader(File.OpenRead(path));
-                //Read Toggle
-                var reader = sr.ReadLine();
-                reader = reader.Replace("ToggleTerraJump = ", "");
-                if (reader == "true")
-                    toogleJumpPads = true;
-                else if (reader == "false")
-                    toogleJumpPads = false;
-                //Read JumpPadsBlock
-                //reader = sr.ReadLine();
-                //reader = reader.Replace("JumpPadsBlock = ", "");
-                //JBID = reader;
-                //Read Height
-                reader = sr.ReadLine();
-                reader = reader.Replace("Height = ", "");
-                height = Int32.Parse(reader);
-                //Read Pressure Plate Jump Toggle
-                reader = sr.ReadLine();
-                reader = reader.Replace("ToggleRessureJump = ", "");
-                if (reader == "true")
-                    toogleJumpPads = true;
-                else if (reader == "false")
-                    toogleJumpPads = false;
-                //End Read
-                sr.Close();
-                TShock.Log.Info("Loading Config Complited!");
-                TShock.Log.Info("Toogle TerraJump = " + toogleJumpPads);
-                //TShock.Log.Info("JumpPadsBlock = " + JBID);
-                TShock.Log.Info("Height = " + height);
-                TShock.Log.Info("Toggle PressurePlateJumps = " + pressureTriggerEnable);
-                //End of Load config
-            }
-
-            else if(!itsconfig)
-            {
-                //Creating config
-                TShock.Log.Info("Creating Config");
-                StreamWriter sw = new StreamWriter(File.Create(path));
-                sw.WriteLine("ToggleTerraJump = " + toogleJumpPads);
-                //sw.WriteLine("JupmPadsBlock = " + JBID);
-                sw.WriteLine("Height = " + height);
-                sw.WriteLine("ToggleRessureJump = " + pressureTriggerEnable);
-                sw.Close();
-                TShock.Log.Info("Config File created!");
-                //End of Creating Config
-            }
-        }
-        //End of configs voids
-
-
-
         //Commmands void
         void OnInitialize(EventArgs args)
         {
@@ -160,10 +92,10 @@ namespace TerraJump
             {
                 HelpText = "Edit height of jump"
             });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.reload", reload, "tjreload", "tjr")
+            /*Commands.ChatCommands.Add(new Command("terrajump.admin.reload", reload, "tjreload", "tjr")
             {
                 HelpText = "Reload config"
-            });
+            });*/
             Commands.ChatCommands.Add(new Command("terrajump.use", runPlayerUpdate, "jump", "j")
             { 
                 HelpText = "Jump command!"
@@ -176,14 +108,14 @@ namespace TerraJump
             {
                 HelpText = "Launch your victim in to space!"
             });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.pressuretoggle", projTog, "tjpressuretoggle", "tjpt")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.pressuretoggle", JPTog, "tjpressuretoggle", "tjpt")
             {
                 HelpText = "Turns on/off TerraJump pressure plate jumps"
             });
-           /* Commands.ChatCommands.Add(new Command("", re, "re", "reverse")
+            Commands.ChatCommands.Add(new Command("", re, "re", "reverse")
             {
                 HelpText = "For fun! It reverse text and send it!"
-            });*/
+            });
             //For Dev! Only!
              /*
             Commands.ChatCommands.Add(new Command("terrajump.dev", y, "gety", "gy", "y")
@@ -199,60 +131,38 @@ namespace TerraJump
         //Commands execute voids
         void toggleJP(CommandArgs args)
         {
-            toogleJumpPads = !toogleJumpPads;
+            toggleJumpPads = !toggleJumpPads;
             //Saving changes
-            StreamWriter sw = new StreamWriter(File.Create(_configFilePath));
-            sw.WriteLine("ToogleTerraJump = " + toogleJumpPads);
-            //sw.WriteLine("JupmPadsBlock = " + JBID);
-            sw.WriteLine("Height = " + height);
-            sw.WriteLine("ToggleRessureJump = " + pressureTriggerEnable);
-            sw.Close();
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable);
             //End of saving
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
             args.Player.SendSuccessMessage("Succes of toggleing TerraJump. Now is {0}",
-                (toogleJumpPads) ? "ON" : "OFF");
+                (toggleJumpPads) ? "ON" : "OFF");
         }
-        void projTog(CommandArgs args)
+        void JPTog(CommandArgs args)
         {
-            projectileTriggerEnable = !projectileTriggerEnable;
+            pressureTriggerEnable = !pressureTriggerEnable;
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable);
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
-            args.Player.SendSuccessMessage("Succes of toggleing projectile jumps. Now is {0}",
-                (toogleJumpPads) ? "ON" : "OFF");
+            args.Player.SendSuccessMessage("Succes of toggleing JumpPads. Now is {0}",
+                (pressureTriggerEnable) ? "ON" : "OFF");
         }
-            /*void editJPB(CommandArgs args)
-            {
-
-            }*/
-            void editH(CommandArgs args)
+        void editH(CommandArgs args)
         {
             float a = float.Parse(args.Parameters[0]);
             args.Player.SendInfoMessage("You set height as " + a);
             height = (int)a;
             TShock.Log.ConsoleInfo("Height set as " + a);
-            StreamWriter sw = new StreamWriter(File.Create(_configFilePath));
-            sw.WriteLine("ToogleTerraJump = " + toogleJumpPads);
-            sw.WriteLine("Height = " + height);
-            sw.Close();
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable);
         }
         void reload(CommandArgs args)
         {
-            TShock.Log.ConsoleInfo("Reloading config!");
-            checkConfigFile(_configFilePath);
-            if (itsconfig)
-                load_createConfigFile(_configFilePath);
-
-            else if(!itsconfig)
-            {
-                args.Player.SendErrorMessage("The config file is missing! So i create them!");
-                TShock.Log.ConsoleError("The config file is missing! So i create them!");
-                load_createConfigFile(_configFilePath);
-            }
-            args.Player.SendSuccessMessage("Realod complited!");
-            TShock.Log.ConsoleInfo("Reload complited!");
+            conf = Config.loadProcedure(_configFilePath);
+            args.Player.SendInfoMessage("Reload complited!");
         }
         void runPlayerUpdate(CommandArgs args)
         {
-            if (!toogleJumpPads)
+            if (!toggleJumpPads)
                 return;
             play = args.Player;
             Thread.Sleep(500);
@@ -265,8 +175,9 @@ namespace TerraJump
         {
             args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
             args.Player.SendInfoMessage("Now height is a " + height);
-            args.Player.SendInfoMessage("Now TerraJump are enable : " + toogleJumpPads);
+            args.Player.SendInfoMessage("Now TerraJump are enable : " + toggleJumpPads);
             args.Player.SendInfoMessage("Now pressure jumps are enable : " + pressureTriggerEnable);
+            args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
             args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
             args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
             args.Player.SendInfoMessage("To jump use /jump or /j");
@@ -312,9 +223,10 @@ namespace TerraJump
                 TShock.Log.Info("Word for now is " + word + "!");
                 wleng = word.ToCharArray();
                 TShock.Log.Info("World have " + wleng + " characters!");
-                for (int ii = word.Length - 1; ii >= 0; ii--)
-                    rew += wleng[i];
+                Array.Reverse(wleng);
+                rew = new string(wleng);
                 TShock.Log.Info("Reversing complete! Now is " + rew + "!");
+                par += " ";
                 par += rew;
                 rew = "";
             }
@@ -331,7 +243,7 @@ namespace TerraJump
         {
             if (!pressureTriggerEnable)
                 return;
-            TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
+            //TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.whoAmI];
             Tile pressurePlate = Main.tile[args.TileX, args.TileY];
@@ -341,95 +253,88 @@ namespace TerraJump
             Tile rightBlock = Main.tile[args.TileX - 1, args.TileY];
             if (underBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
-                TShock.Log.ConsoleInfo("[PlTPP]O on 'Under' this slime block are!");
+                //TShock.Log.ConsoleInfo("[PlTPP]O on 'Under' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile underLeftBlock = Main.tile[args.TileX + 1, args.TileY + 1];
                 Tile underRightBlock = Main.tile[args.TileX - 1, args.TileY + 1];
                 if (underLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
-                    TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
+                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
                     ulb = true;
                 }
                 if (underRightBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
-                    TShock.Log.ConsoleInfo("[PlTPP]Ok on right!");
+                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on right!");
                     urb = true;
                 }
                 if (ulb && urb)
                     pds = true;
-                else
-                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
             }
             else if (upBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
-                TShock.Log.ConsoleInfo("[PlTPP]O on 'Up' this slime block are!");
+                //TShock.Log.ConsoleInfo("[PlTPP]O on 'Up' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile upLeftBlock = Main.tile[args.TileX + 1, args.TileY - 1];
                 Tile upRightBlock = Main.tile[args.TileX - 1, args.TileY - 1];
                 if (upLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
-                    TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
+                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
                     ulb = true;
                 }
                 if (upRightBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
-                    TShock.Log.ConsoleInfo("[PlTPP]Ok on right!");
+                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on right!");
                     urb = true;
                 }
                 if (ulb && urb)
                     pds = true;
-                else
-                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
             }
             else if (leftBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
-                TShock.Log.ConsoleInfo("[PlTPP]O on 'Left' this slime block are!");
+                //TShock.Log.ConsoleInfo("[PlTPP]O on 'Left' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile leftUpBlock = Main.tile[args.TileX + 1, args.TileY - 1];
                 Tile leftUnderBlock = Main.tile[args.TileX + 1, args.TileY + 1];
                 if (leftUpBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
-                    TShock.Log.ConsoleInfo("[PlTPP]Ok on up!");
+                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on up!");
                     ulb = true;
                 }
                 if (leftUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
-                    TShock.Log.ConsoleInfo("[PlTPP]Ok on under!");
+                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on under!");
                     urb = true;
                 }
                 if (ulb && urb)
                     pds = true;
-                else
-                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
             }
             else if (rightBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
-                TShock.Log.ConsoleInfo("[PlTPP]O on 'Right' thsi slime block are!");
+                //TShock.Log.ConsoleInfo("[PlTPP]O on 'Right' thsi slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile rightUpBlock = Main.tile[args.TileX - 1, args.TileY - 1];
                 Tile rightUnderBlock = Main.tile[args.TileX - 1, args.TileY + 1];
                 if (rightUpBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
-                    TShock.Log.ConsoleInfo("[PlTPP]Ok on up!");
+                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on up!");
                     ulb = true;
                 }
                 if (rightUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
-                    TShock.Log.ConsoleInfo("[PlTPP]Ok on under!");
+                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on under!");
                     urb = true;
                 }
                 if (ulb && urb)
                     pds = true;
-                else
-                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
+
             }
             else
             {
-                TShock.Log.ConsoleInfo("[PlTPP]Can't find any SlimeBlocks! Stoping");
+                //TShock.Log.ConsoleInfo("[PlTPP]Can't find any SlimeBlocks! Stoping");
                 return;
             }
 
@@ -437,7 +342,7 @@ namespace TerraJump
             {
                 ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
                 TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
-                TShock.Log.ConsoleInfo("[PlTPP]Wooh! Procedure succesfull finish!");
+                //TShock.Log.ConsoleInfo("[PlTPP]Wooh! Procedure succesfull finish!");
                 ow.SendInfoMessage("Jump!");
             }
         }
