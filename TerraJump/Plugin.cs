@@ -4,6 +4,8 @@ using System.IO;
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
+using MySql;
+using MySql.Data.MySqlClient;
 
 namespace TerraJump
 {
@@ -14,7 +16,7 @@ namespace TerraJump
         private TSPlayer play;
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
-        private string ver = "2.0.1";
+        private string ver = "2.0.2";
         //Configs
         private bool toggleJumpPads;
         private string JBID;
@@ -30,7 +32,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 0, 1); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 0, 2); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -47,6 +49,7 @@ namespace TerraJump
         public override void Initialize()
         {
             //Loading configs
+            cUP();
             conf = Config.loadProcedure(_configFilePath);
             toggleJumpPads = conf.toggleJumpPads;
             height = conf.height;
@@ -243,21 +246,21 @@ namespace TerraJump
         {
             if (!pressureTriggerEnable)
                 return;
+            else if (!TShock.Players[args.Object.whoAmI].Group.HasPermission("terrajump.use"))
+                return;
             //TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.whoAmI];
             Tile pressurePlate = Main.tile[args.TileX, args.TileY];
             Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
             Tile upBlock = Main.tile[args.TileX, args.TileY - 1];
-            Tile leftBlock = Main.tile[args.TileX + 1, args.TileY];
-            Tile rightBlock = Main.tile[args.TileX - 1, args.TileY];
             if (underBlock.type == Terraria.ID.TileID.SlimeBlock)
             {
                 //TShock.Log.ConsoleInfo("[PlTPP]O on 'Under' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
-                Tile underLeftBlock = Main.tile[args.TileX + 1, args.TileY + 1];
-                Tile underRightBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+                Tile underLeftBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+                Tile underRightBlock = Main.tile[args.TileX + 1, args.TileY + 1];
                 if (underLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
                     //TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
@@ -276,8 +279,8 @@ namespace TerraJump
                 //TShock.Log.ConsoleInfo("[PlTPP]O on 'Up' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
-                Tile upLeftBlock = Main.tile[args.TileX + 1, args.TileY - 1];
-                Tile upRightBlock = Main.tile[args.TileX - 1, args.TileY - 1];
+                Tile upLeftBlock = Main.tile[args.TileX - 1, args.TileY - 1];
+                Tile upRightBlock = Main.tile[args.TileX + 1, args.TileY - 1];
                 if (upLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
                 {
                     //TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
@@ -290,47 +293,6 @@ namespace TerraJump
                 }
                 if (ulb && urb)
                     pds = true;
-            }
-            else if (leftBlock.type == Terraria.ID.TileID.SlimeBlock)
-            {
-                //TShock.Log.ConsoleInfo("[PlTPP]O on 'Left' this slime block are!");
-                bool ulb = false;
-                bool urb = false;
-                Tile leftUpBlock = Main.tile[args.TileX + 1, args.TileY - 1];
-                Tile leftUnderBlock = Main.tile[args.TileX + 1, args.TileY + 1];
-                if (leftUpBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on up!");
-                    ulb = true;
-                }
-                if (leftUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on under!");
-                    urb = true;
-                }
-                if (ulb && urb)
-                    pds = true;
-            }
-            else if (rightBlock.type == Terraria.ID.TileID.SlimeBlock)
-            {
-                //TShock.Log.ConsoleInfo("[PlTPP]O on 'Right' thsi slime block are!");
-                bool ulb = false;
-                bool urb = false;
-                Tile rightUpBlock = Main.tile[args.TileX - 1, args.TileY - 1];
-                Tile rightUnderBlock = Main.tile[args.TileX - 1, args.TileY + 1];
-                if (rightUpBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on up!");
-                    ulb = true;
-                }
-                if (rightUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    //TShock.Log.ConsoleInfo("[PlTPP]Ok on under!");
-                    urb = true;
-                }
-                if (ulb && urb)
-                    pds = true;
-
             }
             else
             {
@@ -466,6 +428,42 @@ namespace TerraJump
             }
         }
         //End projectile triggered pressure plate VOID
+
+        
+        
+        //Chceck Update VOID
+        void cUP()
+        {
+            MySqlCommand MSC = new MySqlCommand();
+            MySqlConnection MSCo = new MySqlConnection();
+            string constr = "server=;uid=;" +
+            "pwd=;database=;";
+            string GVer = String.Empty;
+
+            try
+            {
+                MSCo.ConnectionString = constr;
+                MSCo.Open();
+            }
+            catch (MySql.Data.MySqlClient.MySqlException ex)
+            {
+                TShock.Log.Error("Can't connect to database! With error: " + ex);
+                TShock.Log.ConsoleError("[TerraJump] Can't connect to database! Can't check update!");
+                return;
+            }
+            MSC.Connection = MSCo;
+            MSC.CommandText = "SELECT version FROM PluginsVers WHERE name = 'TerraJump'";
+            MySqlDataReader MSDR = MSC.ExecuteReader();
+            while (MSDR.Read())
+                GVer = MSDR.GetString(0);
+            if (GVer == ver)
+                return;
+            else if (GVer != ver)
+                TShock.Log.ConsoleInfo("[TerraJump] There are new version " + GVer + " but you have version " + ver);
+
+            return;
+        }
+        //End do Check Update VOID
 
         
         
