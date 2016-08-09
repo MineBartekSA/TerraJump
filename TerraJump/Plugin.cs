@@ -17,6 +17,9 @@ namespace TerraJump
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
         private string ver = "2.0.2";
+        public string constr;
+        MySqlCommand MSC = new MySqlCommand();
+        MySqlConnection MSCo = new MySqlConnection();
         //Configs
         private bool toggleJumpPads;
         private string JBID;
@@ -30,7 +33,7 @@ namespace TerraJump
         {
             get { return "TerraJump"; }
         }
-        public override Version Version
+        public override Version Version // Pamięctać by constr czyścić!!!!!
         {
             get { return new Version(2, 0, 2); } // Pamiętaj by zmienić w kilku miejscach =P
         }
@@ -59,7 +62,6 @@ namespace TerraJump
             //Hooks
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             ServerApi.Hooks.PlayerTriggerPressurePlate.Register(this, OnPlayerTriggerPressurePlate);
-            ServerApi.Hooks.ProjectileTriggerPressurePlate.Register(this, OnProjectileTriggerPressurePlate);
         }
         protected override void Dispose(bool disposing)
         {
@@ -68,7 +70,6 @@ namespace TerraJump
                 //UnHooks
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
                 ServerApi.Hooks.PlayerTriggerPressurePlate.Deregister(this, OnPlayerTriggerPressurePlate);
-                ServerApi.Hooks.ProjectileTriggerPressurePlate.Deregister(this, OnProjectileTriggerPressurePlate);
             }
             base.Dispose(disposing);
         }
@@ -246,7 +247,7 @@ namespace TerraJump
         {
             if (!pressureTriggerEnable)
                 return;
-            else if (!TShock.Players[args.Object.whoAmI].Group.HasPermission("terrajump.use"))
+            else if (!TShock.Players[args.Object.whoAmI].HasPermission("terrajump.use"))
                 return;
             //TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
@@ -312,125 +313,6 @@ namespace TerraJump
 
         
         
-        //Projectile triggered pressure plate VOID
-        void OnProjectileTriggerPressurePlate(TriggerPressurePlateEventArgs<Projectile> args)
-        {
-            if (!projectileTriggerEnable)
-                return;
-            TShock.Log.ConsoleInfo("[PTPP]Starting procedure");
-            bool pds = false;
-            TSPlayer ow = TShock.Players[args.Object.owner];
-            Tile pressurePlate = Main.tile[args.TileX, args.TileY];
-            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
-            Tile upBlock = Main.tile[args.TileX, args.TileY - 1];
-            Tile leftBlock = Main.tile[args.TileX + 1, args.TileY];
-            Tile rightBlock = Main.tile[args.TileX - 1, args.TileY];
-            if (underBlock.type == Terraria.ID.TileID.SlimeBlock)
-            {
-                TShock.Log.ConsoleInfo("[PTPP]O on 'Under' this slime block are!");
-                bool ulb = false;
-                bool urb  = false;
-                Tile underLeftBlock = Main.tile[args.TileX + 1, args.TileY + 1];
-                Tile underRightBlock = Main.tile[args.TileX - 1, args.TileY + 1];
-                if (underLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    TShock.Log.ConsoleInfo("[PTPP]Ok on left!");
-                    ulb = true;
-                }
-                if (underRightBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    TShock.Log.ConsoleInfo("[PTPP]Ok on right!");
-                    urb = true;
-                } 
-                if (ulb && urb)
-                    pds = true;
-                else
-                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
-            }
-            else if (upBlock.type == Terraria.ID.TileID.SlimeBlock)
-            {
-                TShock.Log.ConsoleInfo("[PTPP]O on 'Up' this slime block are!");
-                bool ulb = false;
-                bool urb = false;
-                Tile upLeftBlock = Main.tile[args.TileX + 1, args.TileY - 1];
-                Tile upRightBlock = Main.tile[args.TileX - 1, args.TileY - 1];
-                if (upLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    TShock.Log.ConsoleInfo("[PTPP]Ok on left!");
-                    ulb = true;
-                }
-                if (upRightBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    TShock.Log.ConsoleInfo("[PTPP]Ok on right!");
-                    urb = true;
-                }
-                if (ulb && urb)
-                    pds = true;
-                else
-                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
-            }
-            else if (leftBlock.type == Terraria.ID.TileID.SlimeBlock)
-            {
-                TShock.Log.ConsoleInfo("[PTPP]O on 'Left' this slime block are!");
-                bool ulb = false;
-                bool urb = false;
-                Tile leftUpBlock = Main.tile[args.TileX + 1, args.TileY - 1];
-                Tile leftUnderBlock = Main.tile[args.TileX + 1, args.TileY + 1];
-                if (leftUpBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    TShock.Log.ConsoleInfo("[PTPP]Ok on up!");
-                    ulb = true;
-                }
-                if (leftUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    TShock.Log.ConsoleInfo("[PTPP]Ok on under!");
-                    urb = true;
-                }
-                if (ulb && urb)
-                    pds = true;
-                else
-                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
-            }
-            else if (rightBlock.type == Terraria.ID.TileID.SlimeBlock)
-            {
-                TShock.Log.ConsoleInfo("[PTPP]O on 'Right' thsi slime block are!");
-                bool ulb = false;
-                bool urb = false;
-                Tile rightUpBlock = Main.tile[args.TileX - 1, args.TileY - 1];
-                Tile rightUnderBlock = Main.tile[args.TileX - 1, args.TileY + 1];
-                if (rightUpBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    TShock.Log.ConsoleInfo("[PTPP]Ok on up!");
-                    ulb = true;
-                }
-                if (rightUnderBlock.type == Terraria.ID.TileID.SlimeBlock)
-                {
-                    TShock.Log.ConsoleInfo("[PTPP]Ok on under!");
-                    urb = true;
-                }
-                if (ulb && urb)
-                    pds = true;
-                else
-                    TShock.Log.ConsoleInfo("There is one or two slime blocks but i need three! Stoping");
-            }
-            else
-            {
-                TShock.Log.ConsoleInfo("[PTPP]Can't find any SlimeBlocks! Stoping");
-                return;
-            }
-
-            if (pds)
-            {
-                ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
-                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
-                TShock.Log.ConsoleInfo("[PTPP]Wooh! Procedure succesfull finish!");
-                ow.SendInfoMessage("Jump!");
-            }
-        }
-        //End projectile triggered pressure plate VOID
-
-        
-        
         //Chceck Update VOID
         void cUP()
         {
@@ -482,18 +364,7 @@ namespace TerraJump
             }
 
         }
-        /*void OnPostInitialize(EventArgs args)    // Old metod
-        {
-            updateTimer = new Timer(500);
-            updateTimer.Elapsed += UpdateTimerOnElapsed;
-        }
-        void UpdateTimerOnElapsed(object sender, ElapsedEventArgs args)
-        {
-            play.TPlayer.velocity.Y = play.TPlayer.velocity.Y - height;
-            TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", play.Index);
-            play.SendInfoMessage("Jump!");
-            updateTimer.Stop();
-        }*/
+
         //End fo Voids
     }
 
