@@ -247,7 +247,7 @@ namespace TerraJump
         {
             if (!pressureTriggerEnable)
                 return;
-            else if (!TShock.Players[args.Object.whoAmI].HasPermission("terrajump.use"))
+            else if (!TShock.Players[args.Object.whoAmI].HasPermission("terrajump.usepad"))
                 return;
             //TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
@@ -318,8 +318,7 @@ namespace TerraJump
         {
             MySqlCommand MSC = new MySqlCommand();
             MySqlConnection MSCo = new MySqlConnection();
-            string constr = "server=;uid=;" +
-            "pwd=;database=;";
+            string constr = "";
             string GVer = String.Empty;
 
             try
