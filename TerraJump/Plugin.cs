@@ -9,7 +9,7 @@ using MySql.Data.MySqlClient;
 
 namespace TerraJump
 {
-    [ApiVersion(1, 23)]
+    [ApiVersion(1, 25)]
     public class TerraJump : TerrariaPlugin
     {
         //Strings, ints, bools
