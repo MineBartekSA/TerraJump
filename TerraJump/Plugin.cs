@@ -9,14 +9,14 @@ using MySql.Data.MySqlClient;
 
 namespace TerraJump
 {
-    [ApiVersion(1, 23)]
+    [ApiVersion(1, 25)]
     public class TerraJump : TerrariaPlugin
     {
         //Strings, ints, bools
         private TSPlayer play;
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
-        private string ver = "2.0.2";
+        private string ver = "2.0.3"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
         MySqlCommand MSC = new MySqlCommand();
         MySqlConnection MSCo = new MySqlConnection();
@@ -35,7 +35,7 @@ namespace TerraJump
         }
         public override Version Version // Pamięctać by constr czyścić!!!!!
         {
-            get { return new Version(2, 0, 2); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 0, 3); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -110,7 +110,7 @@ namespace TerraJump
             });
             Commands.ChatCommands.Add(new Command("", skyJump, "spacelaunch", "sl")
             {
-                HelpText = "Launch your victim in to space!"
+                HelpText = "Launch your victim in to space! At your risk!!"
             });
             Commands.ChatCommands.Add(new Command("terrajump.admin.pressuretoggle", JPTog, "tjpressuretoggle", "tjpt")
             {
@@ -316,15 +316,16 @@ namespace TerraJump
         //Chceck Update VOID
         void cUP()
         {
-            MySqlCommand MSC = new MySqlCommand();
-            MySqlConnection MSCo = new MySqlConnection();
+            //MySqlCommand MSC = new MySqlCommand();
+            //MySqlConnection MSCo = new MySqlConnection();
             string constr = "";
             string GVer = String.Empty;
 
             try
             {
-                MSCo.ConnectionString = constr;
-                MSCo.Open();
+                TShock.Log.Info("[Update check] Sorry i don't update this yet. =P");
+                //MSCo.ConnectionString = constr;
+                //MSCo.Open();
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
             {
@@ -332,7 +333,7 @@ namespace TerraJump
                 TShock.Log.ConsoleError("[TerraJump] Can't connect to database! Can't check update!");
                 return;
             }
-            MSC.Connection = MSCo;
+            /*MSC.Connection = MSCo;
             MSC.CommandText = "SELECT version FROM PluginsVers WHERE name = 'TerraJump'";
             MySqlDataReader MSDR = MSC.ExecuteReader();
             while (MSDR.Read())
@@ -341,7 +342,7 @@ namespace TerraJump
                 return;
             else if (GVer != ver)
                 TShock.Log.ConsoleInfo("[TerraJump] There are new version " + GVer + " but you have version " + ver);
-
+                */
             return;
         }
         //End do Check Update VOID
