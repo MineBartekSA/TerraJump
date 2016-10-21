@@ -4,8 +4,7 @@ using System.IO;
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
-using MySql;
-using MySql.Data.MySqlClient;
+using System.Net;
 
 namespace TerraJump
 {
@@ -16,16 +15,18 @@ namespace TerraJump
         private TSPlayer play;
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
-        private string ver = "2.0.3"; // Pamiętaj by zmienić w kilku miejscach =P
+        private string ver = "2.0.4"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
-        MySqlCommand MSC = new MySqlCommand();
-        MySqlConnection MSCo = new MySqlConnection();
         //Configs
         private bool toggleJumpPads;
-        private string JBID;
+        private int JBID;
         private int height;
         private bool projectileTriggerEnable;
         private bool pressureTriggerEnable;
+        private string reFormat;
+        private byte red;
+        private byte green;
+        private byte blue;
 
         //End of this :D
         //Load stage
@@ -33,9 +34,9 @@ namespace TerraJump
         {
             get { return "TerraJump"; }
         }
-        public override Version Version // Pamięctać by constr czyścić!!!!!
+        public override Version Version
         {
-            get { return new Version(2, 0, 3); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 0, 4); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -59,9 +60,14 @@ namespace TerraJump
             JBID = conf.JBID;
             pressureTriggerEnable = conf.pressureTriggerEnable;
             projectileTriggerEnable = conf.projectileTriggerEnable;
+            reFormat = conf.reFormat;
+            red = conf.ReRed;
+            green = conf.ReGrean;
+            blue = conf.ReBlue;
             //Hooks
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             ServerApi.Hooks.PlayerTriggerPressurePlate.Register(this, OnPlayerTriggerPressurePlate);
+            //TShock.Log.ConsoleInfo("Hey listen!!! " + slimeblockID);
         }
         protected override void Dispose(bool disposing)
         {
@@ -88,10 +94,10 @@ namespace TerraJump
             {
                 HelpText = "Turns on/off TerraJump"
             });
-            /*Commands.ChatCommands.Add(new Command("terrajump.admin.edit", editJPB, "tjblock")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.edit", editJPB, "tjblock", "tjb")
             {
                 HelpText = "Edit block of JumpPdas."
-            });*/
+            });
             Commands.ChatCommands.Add(new Command("terrajump.admin.editH", editH, "tjheight", "tjh")
             {
                 HelpText = "Edit height of jump"
@@ -137,7 +143,7 @@ namespace TerraJump
         {
             toggleJumpPads = !toggleJumpPads;
             //Saving changes
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable);
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable, reFormat, red, green, blue);
             //End of saving
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
             args.Player.SendSuccessMessage("Succes of toggleing TerraJump. Now is {0}",
@@ -146,7 +152,7 @@ namespace TerraJump
         void JPTog(CommandArgs args)
         {
             pressureTriggerEnable = !pressureTriggerEnable;
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable);
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable, reFormat, red, green, blue);
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
             args.Player.SendSuccessMessage("Succes of toggleing JumpPads. Now is {0}",
                 (pressureTriggerEnable) ? "ON" : "OFF");
@@ -157,7 +163,7 @@ namespace TerraJump
             args.Player.SendInfoMessage("You set height as " + a);
             height = (int)a;
             TShock.Log.ConsoleInfo("Height set as " + a);
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable);
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable, reFormat, red, green, blue);
         }
         void reload(CommandArgs args)
         {
@@ -183,6 +189,7 @@ namespace TerraJump
             args.Player.SendInfoMessage("Now pressure jumps are enable : " + pressureTriggerEnable);
             args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
             args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
+            args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
             args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
             args.Player.SendInfoMessage("To jump use /jump or /j");
         }
@@ -235,8 +242,19 @@ namespace TerraJump
                 rew = "";
             }
             TShock.Log.Info("Reversing all world complete!");
-            arg.Player.SendMessageFromPlayer(par,255,255,255,1);
+            TShock.Log.Info("Now this is " + par);
+            string message = formatRe(par, reFormat, arg.Player);
+            TShock.Log.Info("Not before formating is " + message);
+            arg.Player.SendMessageFromPlayer(message,red,green,blue,1);
             TShock.Log.Info("Reversing sending complete!");
+        }
+        void editJPB(CommandArgs args)
+        {
+            float a = float.Parse(args.Parameters[0]);
+            args.Player.SendInfoMessage("You set block ID as " + a);
+            JBID = (int)a;
+            TShock.Log.ConsoleInfo("Block ID set as " + a);
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable, reFormat, red, green, blue);
         }
         //End commands ecexute voids
 
@@ -255,19 +273,19 @@ namespace TerraJump
             Tile pressurePlate = Main.tile[args.TileX, args.TileY];
             Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
             Tile upBlock = Main.tile[args.TileX, args.TileY - 1];
-            if (underBlock.type == Terraria.ID.TileID.SlimeBlock)
+            if (underBlock.type == JBID)
             {
                 //TShock.Log.ConsoleInfo("[PlTPP]O on 'Under' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile underLeftBlock = Main.tile[args.TileX - 1, args.TileY + 1];
                 Tile underRightBlock = Main.tile[args.TileX + 1, args.TileY + 1];
-                if (underLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
+                if (underLeftBlock.type == JBID)
                 {
                     //TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
                     ulb = true;
                 }
-                if (underRightBlock.type == Terraria.ID.TileID.SlimeBlock)
+                if (underRightBlock.type == JBID)
                 {
                     //TShock.Log.ConsoleInfo("[PlTPP]Ok on right!");
                     urb = true;
@@ -275,19 +293,19 @@ namespace TerraJump
                 if (ulb && urb)
                     pds = true;
             }
-            else if (upBlock.type == Terraria.ID.TileID.SlimeBlock)
+            else if (upBlock.type == JBID)
             {
                 //TShock.Log.ConsoleInfo("[PlTPP]O on 'Up' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
                 Tile upLeftBlock = Main.tile[args.TileX - 1, args.TileY - 1];
                 Tile upRightBlock = Main.tile[args.TileX + 1, args.TileY - 1];
-                if (upLeftBlock.type == Terraria.ID.TileID.SlimeBlock)
+                if (upLeftBlock.type == JBID)
                 {
                     //TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
                     ulb = true;
                 }
-                if (upRightBlock.type == Terraria.ID.TileID.SlimeBlock)
+                if (upRightBlock.type == JBID)
                 {
                     //TShock.Log.ConsoleInfo("[PlTPP]Ok on right!");
                     urb = true;
@@ -302,7 +320,7 @@ namespace TerraJump
             }
 
             if (pds)
-            {
+            { 
                 ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
                 TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
                 //TShock.Log.ConsoleInfo("[PlTPP]Wooh! Procedure succesfull finish!");
@@ -311,44 +329,77 @@ namespace TerraJump
         }
         //End presure plate trigger void
 
-        
-        
+
+
         //Chceck Update VOID
         void cUP()
         {
-            //MySqlCommand MSC = new MySqlCommand();
-            //MySqlConnection MSCo = new MySqlConnection();
-            string constr = "";
-            string GVer = String.Empty;
-
             try
             {
-                TShock.Log.Info("[Update check] Sorry i don't update this yet. =P");
-                //MSCo.ConnectionString = constr;
-                //MSCo.Open();
+                WebClient WClient = new WebClient();
+                WClient.DownloadFile("https://raw.githubusercontent.com/MineBartekSA/TerraJump/master/version.txt", TShock.SavePath + @"\Ver.txt");
             }
-            catch (MySql.Data.MySqlClient.MySqlException ex)
+            catch (WebException)
             {
-                TShock.Log.Error("Can't connect to database! With error: " + ex);
-                TShock.Log.ConsoleError("[TerraJump] Can't connect to database! Can't check update!");
+                TShock.Log.ConsoleError("[TerraJump Update] Sorry i can't check updates. Please chcek your internet connection");
+                TShock.Log.Error("Sorry i can't check updates. Please chcek your internet connection");
                 return;
             }
-            /*MSC.Connection = MSCo;
-            MSC.CommandText = "SELECT version FROM PluginsVers WHERE name = 'TerraJump'";
-            MySqlDataReader MSDR = MSC.ExecuteReader();
-            while (MSDR.Read())
-                GVer = MSDR.GetString(0);
-            if (GVer == ver)
+
+            StreamReader readfile = new StreamReader(TShock.SavePath + @"\Ver.txt");
+            string getver =  readfile.ReadLine();
+            readfile.Close();
+
+            int firstGetver = (int)getver[0];
+            int secondGetver = (int)getver[2];
+            int thirdGetver = (int)getver[4];
+
+            int firstver = (int)ver[0];
+            int secondver = (int)ver[2];
+            int thirdver = (int)ver[4];
+
+            /*TShock.Log.ConsoleInfo("Fisrt get " + firstGetver + " Second get " + secondGetver + " Third get " + thirdGetver);        // FOR DEVS ONLY!!
+            TShock.Log.ConsoleInfo("Fisrt ver " + firstver + " Second ver " + secondver + " Third ver " + thirdver);*/
+
+            if (firstGetver > firstver)
+            {
+                TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
                 return;
-            else if (GVer != ver)
-                TShock.Log.ConsoleInfo("[TerraJump] There are new version " + GVer + " but you have version " + ver);
-                */
+            }
+
+            if (secondGetver > secondver)
+            {
+                TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
+                return;
+            }
+
+            if (thirdGetver > thirdver)
+            {
+                TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
+                return;
+            }
+
+            File.Delete(TShock.SavePath + @"\Ver.txt");
+
             return;
         }
         //End do Check Update VOID
 
         
         
+        //Format reverse VOID
+        string formatRe(string mess, string formstring, TSPlayer arg)
+        {
+            string format = "";
+
+            format = formstring.Replace(":group:", arg.Group.Name).Replace(":user:", arg.Name).Replace(":mess:", mess);
+
+            return format;
+        }
+        //End Format reverso VOID
+
+
+
         //Other Voids
         void up (TSPlayer player)
         {

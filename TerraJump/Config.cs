@@ -9,9 +9,13 @@ namespace TerraJump
     {
         public bool toggleJumpPads { get; set; }
         public int height { get; set; }
-        public string JBID { get; set; }
+        public int JBID { get; set; }
         public bool pressureTriggerEnable { get; set; }
         public bool projectileTriggerEnable { get; set; }
+        public string reFormat { get; set; }
+        public byte ReRed { get; set; }
+        public byte ReGrean { get; set; }
+        public byte ReBlue { get; set; }
 
         public static Config loadProcedure(string path)
         {
@@ -29,7 +33,7 @@ namespace TerraJump
                 return (JSON);
             }
         }
-        public static Config update(string path, bool TJP, int H, string JBID, bool PTE, bool PrTE)
+        public static Config update(string path, bool TJP, int H, int JBID, bool PTE, bool PrTE, string rForm, byte r, byte g, byte b)
         {
             Config c = new Config
             {
@@ -37,7 +41,11 @@ namespace TerraJump
                 height = H,
                 JBID = JBID,
                 pressureTriggerEnable = PTE,
-                projectileTriggerEnable = PrTE
+                projectileTriggerEnable = PrTE,
+                reFormat = rForm,
+                ReRed = r,
+                ReGrean = g,
+                ReBlue = b
             };
             File.WriteAllText(path, JsonConvert.SerializeObject(c, Formatting.Indented));
 
@@ -59,9 +67,13 @@ namespace TerraJump
             {
                 toggleJumpPads = true,
                 height = 20,
-                JBID = "SlimeBlcok",
+                JBID = 193,
                 pressureTriggerEnable = true,
-                projectileTriggerEnable = false
+                projectileTriggerEnable = false,
+                reFormat = "<:group:> :user: : :mess:",
+                ReRed = 255,
+                ReGrean = 255,
+                ReBlue = 255
             };
 
             File.WriteAllText(path, JsonConvert.SerializeObject(cd, Formatting.Indented));
