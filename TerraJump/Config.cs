@@ -11,7 +11,6 @@ namespace TerraJump
         public int height { get; set; }
         public int JBID { get; set; }
         public bool pressureTriggerEnable { get; set; }
-        public bool projectileTriggerEnable { get; set; }
         public string reFormat { get; set; }
         public byte ReRed { get; set; }
         public byte ReGrean { get; set; }
@@ -33,15 +32,15 @@ namespace TerraJump
                 return (JSON);
             }
         }
-        public static Config update(string path, bool TJP, int H, int JBID, bool PTE, bool PrTE, string rForm, byte r, byte g, byte b)
+        public static Config update(string path, bool TJP, int H, int JBID, bool PTE, string rForm, byte r, byte g, byte b)
         {
+            TShock.Log.Info("Updating config");
             Config c = new Config
             {
                 toggleJumpPads = TJP,
                 height = H,
                 JBID = JBID,
                 pressureTriggerEnable = PTE,
-                projectileTriggerEnable = PrTE,
                 reFormat = rForm,
                 ReRed = r,
                 ReGrean = g,
@@ -56,20 +55,43 @@ namespace TerraJump
 
         public static Config load(string path)
         {
-            StreamReader sr = new StreamReader(File.Open(path, FileMode.Open));
-            var JSON = JsonConvert.DeserializeObject<Config>(sr.ReadToEnd());
-            return (JSON);
+            TShock.Log.Info("Loading config");
+            try
+            {
+                StreamReader sr = new StreamReader(File.Open(path, FileMode.Open));
+                var JSON = JsonConvert.DeserializeObject<Config>(sr.ReadToEnd());
+                return (JSON);
+            }
+            catch(JsonReaderException exe)
+            {
+                TShock.Log.Error("Error while Loading config");
+                TShock.Log.Error(exe.Message);
+                Config exeConf = new Config
+                {
+                    toggleJumpPads = false,
+                    height = 20,
+                    JBID = 193,
+                    pressureTriggerEnable = true,
+                    reFormat = "<:group:> :user: : :mess:",
+                    ReRed = 255,
+                    ReGrean = 255,
+                    ReBlue = 255
+                };
+
+                return (exeConf);
+            }
+            
         }
 
         public static Config create(string path)
         {
+            TShock.Log.Info("Creating a new config file");
             Config cd = new Config
             {
                 toggleJumpPads = true,
                 height = 20,
                 JBID = 193,
                 pressureTriggerEnable = true,
-                projectileTriggerEnable = false,
                 reFormat = "<:group:> :user: : :mess:",
                 ReRed = 255,
                 ReGrean = 255,

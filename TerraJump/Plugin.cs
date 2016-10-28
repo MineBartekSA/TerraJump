@@ -21,7 +21,6 @@ namespace TerraJump
         private bool toggleJumpPads;
         private int JBID;
         private int height;
-        private bool projectileTriggerEnable;
         private bool pressureTriggerEnable;
         private string reFormat;
         private byte red;
@@ -55,11 +54,16 @@ namespace TerraJump
             //Loading configs
             cUP();
             conf = Config.loadProcedure(_configFilePath);
+            TShock.Log.Info("Finish of Config loading and starting loading plugin");
             toggleJumpPads = conf.toggleJumpPads;
+            if(toggleJumpPads == false)
+            {
+                TShock.Log.ConsoleError("You need to have a good config!");
+                return;
+            }
             height = conf.height;
             JBID = conf.JBID;
             pressureTriggerEnable = conf.pressureTriggerEnable;
-            projectileTriggerEnable = conf.projectileTriggerEnable;
             reFormat = conf.reFormat;
             red = conf.ReRed;
             green = conf.ReGrean;
@@ -68,6 +72,7 @@ namespace TerraJump
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             ServerApi.Hooks.PlayerTriggerPressurePlate.Register(this, OnPlayerTriggerPressurePlate);
             //TShock.Log.ConsoleInfo("Hey listen!!! " + slimeblockID);
+            TShock.Log.Info("Init complate!");
         }
         protected override void Dispose(bool disposing)
         {
@@ -143,7 +148,7 @@ namespace TerraJump
         {
             toggleJumpPads = !toggleJumpPads;
             //Saving changes
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable, reFormat, red, green, blue);
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
             //End of saving
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
             args.Player.SendSuccessMessage("Succes of toggleing TerraJump. Now is {0}",
@@ -151,19 +156,29 @@ namespace TerraJump
         }
         void JPTog(CommandArgs args)
         {
+            if (toggleJumpPads == false)
+            {
+                TShock.Log.ConsoleError("You need to turn on your plugin!");
+                return;
+            }
             pressureTriggerEnable = !pressureTriggerEnable;
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable, reFormat, red, green, blue);
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
             args.Player.SendSuccessMessage("Succes of toggleing JumpPads. Now is {0}",
                 (pressureTriggerEnable) ? "ON" : "OFF");
         }
         void editH(CommandArgs args)
         {
+            if (toggleJumpPads == false)
+            {
+                TShock.Log.ConsoleError("You need to turn on your plugin!");
+                return;
+            }
             float a = float.Parse(args.Parameters[0]);
             args.Player.SendInfoMessage("You set height as " + a);
             height = (int)a;
             TShock.Log.ConsoleInfo("Height set as " + a);
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable, reFormat, red, green, blue);
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
         }
         void reload(CommandArgs args)
         {
@@ -195,6 +210,11 @@ namespace TerraJump
         }
         void skyJump (CommandArgs args)
         {
+            if (toggleJumpPads == false)
+            {
+                TShock.Log.ConsoleError("You need to turn on your plugin!");
+                return;
+            }
             if (args.Player.RealPlayer)
             {
                 args.Player.SendErrorMessage("You must run this command from the console.");
@@ -223,6 +243,11 @@ namespace TerraJump
         }
         void re(CommandArgs arg)
         {
+            if (toggleJumpPads == false)
+            {
+                TShock.Log.ConsoleError("You need to turn on your plugin!");
+                return;
+            }
             string par = "";
             string rew = "";
             char[] wleng;
@@ -250,11 +275,16 @@ namespace TerraJump
         }
         void editJPB(CommandArgs args)
         {
+            if (toggleJumpPads == false)
+            {
+                TShock.Log.ConsoleError("You need to turn on your plugin!");
+                return;
+            }
             float a = float.Parse(args.Parameters[0]);
             args.Player.SendInfoMessage("You set block ID as " + a);
             JBID = (int)a;
             TShock.Log.ConsoleInfo("Block ID set as " + a);
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, projectileTriggerEnable, reFormat, red, green, blue);
+            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
         }
         //End commands ecexute voids
 
@@ -266,7 +296,10 @@ namespace TerraJump
             if (!pressureTriggerEnable)
                 return;
             else if (!TShock.Players[args.Object.whoAmI].HasPermission("terrajump.usepad"))
+            {
+                TShock.Players[args.Object.whoAmI].SendErrorMessage("You don't have permission to do this!");
                 return;
+            }
             //TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.whoAmI];
@@ -381,6 +414,8 @@ namespace TerraJump
 
             File.Delete(TShock.SavePath + @"\Ver.txt");
 
+
+            TShock.Log.Info("No Updates");
             return;
         }
         //End do Check Update VOID
