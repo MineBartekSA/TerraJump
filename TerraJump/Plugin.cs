@@ -15,8 +15,10 @@ namespace TerraJump
         private TSPlayer play;
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
-        private string ver = "2.0.4"; // Pamiętaj by zmienić w kilku miejscach =P
+        private string ver = "2.0.5"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
+        private bool isUpdates;
+        private string getver;
         //Configs
         private bool toggleJumpPads;
         private int JBID;
@@ -35,7 +37,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 0, 4); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 0, 5); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -43,7 +45,7 @@ namespace TerraJump
         }
         public override string Description
         {
-            get { return "It's simple JumpPads plugn for Tshock!"; }
+            get { return "It's simple JumpPads plugin for Tshock!"; }
         }
         public TerraJump(Main game) : base(game)
         {
@@ -200,8 +202,10 @@ namespace TerraJump
         {
             args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
             args.Player.SendInfoMessage("Now height is a " + height);
-            args.Player.SendInfoMessage("Now TerraJump are enable : " + toggleJumpPads);
-            args.Player.SendInfoMessage("Now pressure jumps are enable : " + pressureTriggerEnable);
+            args.Player.SendInfoMessage("Now TerraJump are enable : {0}", (toggleJumpPads) ? "ON" : "OFF");
+            if (isUpdates)
+                args.Player.SendInfoMessage("There is new update! Version " + getver);
+            args.Player.SendInfoMessage("Now pressure jumps are enable : {0}",(pressureTriggerEnable) ? "ON" : "OFF");
             args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
             args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
             args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
@@ -380,7 +384,7 @@ namespace TerraJump
             }
 
             StreamReader readfile = new StreamReader(TShock.SavePath + @"\Ver.txt");
-            string getver =  readfile.ReadLine();
+            getver =  readfile.ReadLine();
             readfile.Close();
 
             int firstGetver = (int)getver[0];
@@ -397,24 +401,27 @@ namespace TerraJump
             if (firstGetver > firstver)
             {
                 TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
+                isUpdates = true;
                 return;
             }
 
             if (secondGetver > secondver)
             {
                 TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
+                isUpdates = true;
                 return;
             }
 
             if (thirdGetver > thirdver)
             {
                 TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
+                isUpdates = true;
                 return;
             }
 
             File.Delete(TShock.SavePath + @"\Ver.txt");
 
-
+            isUpdates = false;
             TShock.Log.Info("No Updates");
             return;
         }
