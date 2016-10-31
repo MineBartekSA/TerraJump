@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using TShockAPI;
 using Newtonsoft.Json;
-using System.Data;
 
 namespace TerraJump
 {
@@ -105,10 +104,4 @@ namespace TerraJump
             return (JSON);
         }
     }
-    
-    /*public static class configDetiles
-    {
-        public bool enable { get; set; }
-        public DataSet achSet { get; set; }
-    }*/
 }
