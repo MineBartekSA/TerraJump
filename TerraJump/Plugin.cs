@@ -44,7 +44,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 1, 0); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 1, 1); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
