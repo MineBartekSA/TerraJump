@@ -10,7 +10,7 @@ using System.Net;
 
 namespace TerraJump
 {
-    [ApiVersion(1, 25)]
+    [ApiVersion(1, 26)]
     public class TerraJump : TerrariaPlugin
     {
         //Strings, ints, bools
@@ -18,12 +18,11 @@ namespace TerraJump
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
         private static TJUDis UDis;
-        private string ver = "2.1.0"; // Pamiętaj by zmienić w kilku miejscach =P
+        private string ver = "2.1.1"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
         private bool isUpdates;
         private string getver;
         private List<TSPlayer> isDisabling = new List<TSPlayer>();
-        private bool fuckyou;
         //Configs
         private bool toggleJumpPads;
         private int JBID;
@@ -35,6 +34,7 @@ namespace TerraJump
         private byte blue;
         private List<string> userlist;
         private DataSet XYSet;
+        private bool fuckyou;
 
         //End of this :D
         //Load stage
@@ -159,12 +159,12 @@ namespace TerraJump
 
             });*/
             //For Dev! Only!
-             /*
-            Commands.ChatCommands.Add(new Command("terrajump.dev", y, "gety", "gy", "y")
-            {
-                HelpText = "Only for dev!"
-            });
-             */
+            /*
+           Commands.ChatCommands.Add(new Command("terrajump.dev", y, "gety", "gy", "y")
+           {
+               HelpText = "Only for dev!"
+           });
+            */
         }
         //End Command void
 
@@ -381,6 +381,9 @@ namespace TerraJump
         //Presure Plate trigger void
         void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
         {
+            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
+            if (underBlock.type != JBID)
+                return;
             //isDisable(args.TileX, args.TileY);
             if (!pressureTriggerEnable)
                 return;
@@ -404,7 +407,6 @@ namespace TerraJump
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.whoAmI];
             Tile pressurePlate = Main.tile[args.TileX, args.TileY];
-            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
             Tile upBlock = Main.tile[args.TileX, args.TileY - 1];
             if (underBlock.type == JBID)
             {
