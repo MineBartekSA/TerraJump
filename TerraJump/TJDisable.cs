@@ -3,6 +3,7 @@ using TShockAPI;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Data;
+using System;
 
 namespace TerraJump
 {
@@ -10,6 +11,7 @@ namespace TerraJump
     {
         private static string _configFilePath = Path.Combine(TShock.SavePath, "DisPlayers.json");
         private static TJUDis c;
+        private static DataRow drr;
 
         public List<string> UList { get; set; }
         public DataSet XYSet { get; set; }
@@ -46,7 +48,7 @@ namespace TerraJump
                 List<string> empty = new List<string>();
                 TJUDis tj = new TJUDis { UList = empty, XYSet = new DataSet("XYJumpPads") };
                 DataTable tXY = new DataTable("XYJumpPads");
-                DataColumn ID = new DataColumn("ID", typeof(int));
+                DataColumn ID = new DataColumn("ID", typeof(int)) { AutoIncrement = true } ;
                 DataColumn X = new DataColumn("X", typeof(float));
                 DataColumn Y = new DataColumn("Y", typeof(float));
                 tXY.Columns.Add(ID);
@@ -78,7 +80,7 @@ namespace TerraJump
             TJUDis tjc = new TJUDis { UList = Ulisttttt, XYSet = new DataSet("XYJumpPads") };
 
             DataTable tXY = new DataTable("XYJumpPads");
-            DataColumn ID = new DataColumn("ID", typeof(int));
+            DataColumn ID = new DataColumn("ID", typeof(int)) { AutoIncrement = true } ;
             DataColumn X = new DataColumn("X", typeof(float));
             DataColumn Y = new DataColumn("Y", typeof(float));
             tXY.Columns.Add(ID);
@@ -128,17 +130,8 @@ namespace TerraJump
             var lastetList = readed.UList;
 
             var XY = readed.XYSet;
-            int lastetID = 0;
-            XY.Tables["XYJumpPads"].AsEnumerable().ForEach(xyy =>
-            {
-                if (lastetID.Equals((int)xyy["ID"]))
-                {
-                    lastetID = (int)xyy["ID"];
-                }
-            });
 
             DataRow dr = XY.Tables["XYJumpPads"].NewRow();
-            dr["ID"] = lastetID + 1;
             dr["X"] = x;
             dr["Y"] = Y;
             XY.Tables["XYJumpPads"].Rows.Add(dr);
@@ -182,16 +175,28 @@ namespace TerraJump
             var a = new List<float> { x, y };
             var XY = readed.XYSet;
 
-            XY.Tables["XYJumpPads"].AsEnumerable().ForEach(xyy =>
+            /*XY.Tables["XYJumpPads"].AsEnumerable().ForEach(xyy =>
             {
                 if ((x.Equals((float)xyy["X"])) && (y.Equals((float)xyy["Y"])))
                 {
                     XY.Tables["XYJumpPads"].Rows.Remove(xyy);
                 }
-            });
+            });*/
+
+            foreach(DataRow dr in XY.Tables["XYJumpPads"].Rows)
+            {
+                if((Convert.ToInt32(dr["X"]) == x) && (Convert.ToInt32(dr["Y"]) == y))
+                {
+                    //TShock.Log.Info("Found you!");
+                    drr = dr;
+                }
+            }
+
+            XY.Tables["XYJumpPads"].Rows.Remove(drr);
+            //TShock.Log.Info("Removal completed!");
 
             XY.AcceptChanges();
-
+            //TShock.Log.Info("Removal completed and accepted!");
             TJUDis tjj = new TJUDis { UList = lastetList, XYSet = XY };
 
             File.WriteAllText(_configFilePath, JsonConvert.SerializeObject(tjj, Formatting.Indented));
