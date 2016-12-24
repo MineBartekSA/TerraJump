@@ -7,10 +7,11 @@ using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 using System.Net;
+using OTAPI.Tile;
 
 namespace TerraJump
 {
-    [ApiVersion(1, 26)]
+    [ApiVersion(2, 00)]
     public class TerraJump : TerrariaPlugin
     {
         //Strings, ints, bools
@@ -18,7 +19,7 @@ namespace TerraJump
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
         private static TJUDis UDis;
-        private string ver = "2.1.2"; // Pamiętaj by zmienić w kilku miejscach =P
+        private string ver = "2.1.3"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
         private bool isUpdates;
         private string getver;
@@ -43,7 +44,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 1, 2); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 1, 3); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -376,7 +377,8 @@ namespace TerraJump
         //Presure Plate trigger void
         void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
         {
-            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
+            TShock.Log.Info("Do this shit works or not?!");
+            ITile underBlock = Main.tile[args.TileX, args.TileY + 1];
             if (underBlock.type != JBID)
                 return;
             if (!pressureTriggerEnable)
@@ -400,15 +402,15 @@ namespace TerraJump
             //TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.whoAmI];
-            Tile pressurePlate = Main.tile[args.TileX, args.TileY];
-            Tile upBlock = Main.tile[args.TileX, args.TileY - 1];
+            ITile pressurePlate = Main.tile[args.TileX, args.TileY];
+            ITile upBlock = Main.tile[args.TileX, args.TileY - 1];
             if (underBlock.type == JBID)
             {
                 //TShock.Log.ConsoleInfo("[PlTPP]O on 'Under' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
-                Tile underLeftBlock = Main.tile[args.TileX - 1, args.TileY + 1];
-                Tile underRightBlock = Main.tile[args.TileX + 1, args.TileY + 1];
+                ITile underLeftBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+                ITile underRightBlock = Main.tile[args.TileX + 1, args.TileY + 1];
                 if (underLeftBlock.type == JBID)
                 {
                     //TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
@@ -458,10 +460,8 @@ namespace TerraJump
             }
 
             StreamReader readfile = new StreamReader(TShock.SavePath + @"\Ver.txt");
-            getver =  readfile.ReadLine();
+            getver = readfile.ReadLine();
             readfile.Close();
-
-            char stabileOrUnstabile = getver[6];
 
             int firstGetver = (int)getver[0];
             int secondGetver = (int)getver[2];
@@ -476,13 +476,6 @@ namespace TerraJump
 
             if (firstGetver > firstver && secondGetver > secondver && thirdGetver > thirdver)
             {
-                if(stabileOrUnstabile.ToString() == "U")
-                {
-                    TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
-                    TShock.Log.ConsoleInfo("[TerraJump Update] This new version is for unstable version!");
-                    isUpdates = true;
-                    return;
-                }
                 TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
                 isUpdates = true;
                 return;
