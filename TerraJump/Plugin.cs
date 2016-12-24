@@ -19,7 +19,7 @@ namespace TerraJump
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
         private static TJUDis UDis;
-        private string ver = "2.1.3"; // Pamiętaj by zmienić w kilku miejscach =P
+        private string ver = "2.1.4"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
         private bool isUpdates;
         private string getver;
@@ -44,7 +44,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 1, 3); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 1, 4); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
