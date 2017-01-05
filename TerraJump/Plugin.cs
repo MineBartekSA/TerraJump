@@ -19,7 +19,7 @@ namespace TerraJump
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
         private static TJUDis UDis;
-        private string ver = "2.1.4"; // Pamiętaj by zmienić w kilku miejscach =P
+        private string ver = "2.1.5"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
         private bool isUpdates;
         private string getver;
@@ -44,7 +44,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 1, 4); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 1, 5); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -126,7 +126,7 @@ namespace TerraJump
             { 
                 HelpText = "Jump command!"
             });
-            Commands.ChatCommands.Add(new Command(Info, "terrajump", "jp")
+            Commands.ChatCommands.Add(new Command(Info, "terrajump", "tj")
             {
                 HelpText = "Information of TerraJump"
             });
@@ -230,13 +230,17 @@ namespace TerraJump
             if (isUpdates)
                 args.Player.SendInfoMessage("There is new update! Version " + getver);
             args.Player.SendInfoMessage("Now JumpPads are : {0}",(pressureTriggerEnable) ? "ON" : "OFF");
-            args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
-            args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
-            args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
-            args.Player.SendInfoMessage("To disable or enable only for you JumpPads use /tjdisable or /tjd");
-            args.Player.SendInfoMessage("To disable or enable a indicated JumpPad use /tjpaddisable or /tjpd");
-            args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
-            args.Player.SendInfoMessage("To jump use /jump or /j");
+            args.Player.SendInfoMessage("To show all commands type /terrajump commands");
+            if(args.Parameters[0] == "commands" || args.Parameters[0] == "com")
+            {
+                args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
+                args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
+                args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
+                args.Player.SendInfoMessage("To disable or enable only for you JumpPads use /tjdisable or /tjd");
+                args.Player.SendInfoMessage("To disable or enable a indicated JumpPad use /tjpaddisable or /tjpd");
+                args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
+                args.Player.SendInfoMessage("To jump use /jump or /j");
+            }
         }
         void skyJump (CommandArgs args)
         {
@@ -377,7 +381,6 @@ namespace TerraJump
         //Presure Plate trigger void
         void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
         {
-            TShock.Log.Info("Do this shit works or not?!");
             ITile underBlock = Main.tile[args.TileX, args.TileY + 1];
             if (underBlock.type != JBID)
                 return;
@@ -398,7 +401,7 @@ namespace TerraJump
             else if (isDisable(args))
                 return;
 
-            TShock.Log.Info("Pressure plate triggered");
+            //TShock.Log.Info("Pressure plate triggered");
             //TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.whoAmI];
@@ -431,7 +434,6 @@ namespace TerraJump
             }
             if (isDisabling.Contains(TShock.Players[args.Object.whoAmI]))
                 JPDisNext(args.TileX, args.TileY, TShock.Players[args.Object.whoAmI]);
-            //TShock.Log.Info("Found you!");
             if (pds)
             { 
                 ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
