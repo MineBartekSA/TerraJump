@@ -222,7 +222,7 @@ namespace TerraJump
             play.SendInfoMessage("Jump!");
             //updateTimer.Start();
         }
-        void Info (CommandArgs args)
+        void Info(CommandArgs args)
         {
             args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
             args.Player.SendInfoMessage("Now height is a " + height);
@@ -407,6 +407,9 @@ namespace TerraJump
             TSPlayer ow = TShock.Players[args.Object.whoAmI];
             ITile pressurePlate = Main.tile[args.TileX, args.TileY];
             ITile upBlock = Main.tile[args.TileX, args.TileY - 1];
+
+            
+
             if (underBlock.type == JBID)
             {
                 //TShock.Log.ConsoleInfo("[PlTPP]O on 'Under' this slime block are!");
@@ -432,6 +435,8 @@ namespace TerraJump
                 //TShock.Log.ConsoleInfo("[PlTPP]Can't find any SlimeBlocks! Stoping");
                 return;
             }
+
+
             if (isDisabling.Contains(TShock.Players[args.Object.whoAmI]))
                 JPDisNext(args.TileX, args.TileY, TShock.Players[args.Object.whoAmI]);
             if (pds)
