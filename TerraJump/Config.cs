@@ -6,41 +6,41 @@ namespace TerraJump
 {
     public class Config
     {
-        public bool toggleJumpPads { get; set; }
-        public int height { get; set; }
+        public bool ToggleJumpPads { get; set; }
+        public int Height { get; set; }
         public int JBID { get; set; }
-        public bool pressureTriggerEnable { get; set; }
-        public string reFormat { get; set; }
+        public bool PressureTriggerEnable { get; set; }
+        public string ReFormat { get; set; }
         public byte ReRed { get; set; }
         public byte ReGrean { get; set; }
         public byte ReBlue { get; set; }
 
-        public static Config loadProcedure(string path)
+        public static Config LoadProcedure(string path)
         {
             bool isit = File.Exists(path);
             if (isit)
             {
                 TShock.Log.Info("Config file found!");
-                var JSON = load(path);
+                var JSON = Load(path);
                 return (JSON);
             }
             else
             {
                 TShock.Log.Error("Config file not found!");
-                var JSON = create(path);
+                var JSON = Create(path);
                 return (JSON);
             }
         }
-        public static Config update(string path, bool TJP, int H, int JBID, bool PTE, string rForm, byte r, byte g, byte b)
+        public static Config Update(string path, bool TJP, int H, int JBID, bool PTE, string rForm, byte r, byte g, byte b)
         {
             TShock.Log.Info("Updating config");
             Config c = new Config
             {
-                toggleJumpPads = TJP,
-                height = H,
+                ToggleJumpPads = TJP,
+                Height = H,
                 JBID = JBID,
-                pressureTriggerEnable = PTE,
-                reFormat = rForm,
+                PressureTriggerEnable = PTE,
+                ReFormat = rForm,
                 ReRed = r,
                 ReGrean = g,
                 ReBlue = b
@@ -52,7 +52,7 @@ namespace TerraJump
             return (JSON);
         }
 
-        public static Config load(string path)
+        public static Config Load(string path)
         {
             TShock.Log.Info("Loading config");
             try
@@ -67,11 +67,11 @@ namespace TerraJump
                 TShock.Log.Error(exe.Message);
                 Config exeConf = new Config
                 {
-                    toggleJumpPads = false,
-                    height = 20,
+                    ToggleJumpPads = false,
+                    Height = 20,
                     JBID = 193,
-                    pressureTriggerEnable = true,
-                    reFormat = "<:group:> :user: : :mess:",
+                    PressureTriggerEnable = true,
+                    ReFormat = "<:group:> :user: : :mess:",
                     ReRed = 255,
                     ReGrean = 255,
                     ReBlue = 255
@@ -82,16 +82,16 @@ namespace TerraJump
             
         }
 
-        public static Config create(string path)
+        public static Config Create(string path)
         {
             TShock.Log.Info("Creating a new config file");
             Config cd = new Config
             {
-                toggleJumpPads = true,
-                height = 20,
+                ToggleJumpPads = true,
+                Height = 20,
                 JBID = 193,
-                pressureTriggerEnable = true,
-                reFormat = "<:group:> :user: : :mess:",
+                PressureTriggerEnable = true,
+                ReFormat = "<:group:> :user: : :mess:",
                 ReRed = 255,
                 ReGrean = 255,
                 ReBlue = 255

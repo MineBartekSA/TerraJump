@@ -16,22 +16,22 @@ namespace TerraJump
         public List<string> UList { get; set; }
         public DataSet XYSet { get; set; }
 
-        public static TJUDis start()
+        public static TJUDis Start()
         {
             bool exist = File.Exists(_configFilePath);
             TShock.Log.Info("Starting loading procedure!");
             if (exist)
             {
-                c = load(_configFilePath);
+                c = Load(_configFilePath);
             }
             else if (!exist)
             {
-                c = create(_configFilePath);
+                c = Create(_configFilePath);
             }
-            return (c);
+            return c;
         }
 
-        static TJUDis load(string path)
+        static TJUDis Load(string path)
         {
             TShock.Log.Info("Tyring to load list of players");
             try
@@ -68,7 +68,7 @@ namespace TerraJump
             }
         }
 
-        static TJUDis create(string path)
+        static TJUDis Create(string path)
         {
             TShock.Log.Info("Createing player list");
 
@@ -101,7 +101,7 @@ namespace TerraJump
             return (tjc);
         }
 
-        public static TJUDis add (TSPlayer user)
+        public static TJUDis Add (TSPlayer user)
         {
             string name = user.Name;
 
@@ -120,7 +120,7 @@ namespace TerraJump
             return (tjj);
         }
 
-        public static TJUDis add(float x, float Y)
+        public static TJUDis Add(float x, float Y)
         {
 
             StreamReader sr = new StreamReader(File.Open(_configFilePath, FileMode.Open));
@@ -145,7 +145,7 @@ namespace TerraJump
             return (tjj);
         }
 
-        public static TJUDis remove (TSPlayer user)
+        public static TJUDis Remove (TSPlayer user)
         {
             string name = user.Name;
 
@@ -164,7 +164,7 @@ namespace TerraJump
             return (tjj);
         }
 
-        public static TJUDis remove(float x, float y)
+        public static TJUDis Remove(float x, float y)
         {
 
             StreamReader sr = new StreamReader(File.Open(_configFilePath, FileMode.Open));
@@ -204,7 +204,7 @@ namespace TerraJump
             return (tjj);
         }
 
-        public static TJUDis read ()
+        public static TJUDis Read ()
         {
             StreamReader sr = new StreamReader(File.Open(_configFilePath, FileMode.Open));
             var readed = JsonConvert.DeserializeObject<TJUDis>(sr.ReadToEnd());
