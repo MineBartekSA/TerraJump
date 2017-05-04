@@ -11,7 +11,7 @@ using OTAPI.Tile;
 
 namespace TerraJump
 {
-    [ApiVersion(2, 00)]
+    [ApiVersion(2, 01)]
     public class TerraJump : TerrariaPlugin
     {
         //Strings, ints, bools
@@ -19,7 +19,7 @@ namespace TerraJump
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
         private static TJUDis UDis;
-        private string ver = "2.1.5"; // Pamiętaj by zmienić w kilku miejscach =P
+        private string ver = "2.1.6"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
         private bool isUpdates;
         private string getver;
@@ -44,7 +44,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 1, 5); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 1, 6); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -68,7 +68,12 @@ namespace TerraJump
             toggleJumpPads = conf.ToggleJumpPads;
             if(toggleJumpPads == false)
             {
-                TShock.Log.ConsoleError("You need to have a good config!");
+                TShock.Log.ConsoleError("[TerraJump]You need to have a good config!");
+                return;
+            }
+            if(!TShock.ServerSideCharacterConfig.Enabled)
+            {
+                TShock.Log.ConsoleError("[TerraJump]You need to have SSC enabled!");
                 return;
             }
             height = conf.Height;
@@ -197,6 +202,7 @@ namespace TerraJump
             {
                 args.Player.SendErrorMessage("You must give a parametr");
                 args.Player.SendErrorMessage("Use /tjheight <number>");
+                return;
             }
             float a = float.Parse(args.Parameters[0]);
             args.Player.SendInfoMessage("You set height as " + a);
@@ -224,23 +230,42 @@ namespace TerraJump
         }
         void Info(CommandArgs args)
         {
-            args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
-            args.Player.SendInfoMessage("Now height is a " + height);
-            args.Player.SendInfoMessage("Now TerraJump are : {0}", (toggleJumpPads) ? "ON" : "OFF");
-            if (isUpdates)
-                args.Player.SendInfoMessage("There is new update! Version " + getver);
-            args.Player.SendInfoMessage("Now JumpPads are : {0}",(pressureTriggerEnable) ? "ON" : "OFF");
-            args.Player.SendInfoMessage("To show all commands type /terrajump commands");
-            if(args.Parameters[0] == "commands" || args.Parameters[0] == "com")
+            if(args.Parameters.Capacity == 0)
             {
-                args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
-                args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
-                args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
-                args.Player.SendInfoMessage("To disable or enable only for you JumpPads use /tjdisable or /tjd");
-                args.Player.SendInfoMessage("To disable or enable a indicated JumpPad use /tjpaddisable or /tjpd");
-                args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
-                args.Player.SendInfoMessage("To jump use /jump or /j");
+                args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
+                args.Player.SendInfoMessage("Now height is a " + height);
+                args.Player.SendInfoMessage("Now TerraJump are : {0}", (toggleJumpPads) ? "ON" : "OFF");
+                args.Player.SendInfoMessage("Now JumpPads are : {0}", (pressureTriggerEnable) ? "ON" : "OFF");
+                args.Player.SendInfoMessage("To show all commands type /terrajump commands");
             }
+            else
+            {
+                switch (args.Parameters[0])
+                {
+                    case "commands":
+                    case "com":
+                        {
+                            args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
+                            args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
+                            args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
+                            args.Player.SendInfoMessage("To disable or enable only for you JumpPads use /tjdisable or /tjd");
+                            args.Player.SendInfoMessage("To disable or enable a indicated JumpPad use /tjpaddisable or /tjpd");
+                            args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
+                            args.Player.SendInfoMessage("To jump use /jump or /j");
+                            break;
+                        }
+
+                    default:
+                        {
+                            args.Player.SendErrorMessage("Did you mean /terrajump commands?");
+                            args.Player.SendErrorMessage("Try to type command again");
+                            break;
+                        }
+                }
+            }
+            if (isUpdates)
+                args.Player.SendMessage("There is new update! Version " + getver, Microsoft.Xna.Framework.Color.Green);
+
         }
         void SkyJump (CommandArgs args)
         {
@@ -258,6 +283,7 @@ namespace TerraJump
             {
                 args.Player.SendErrorMessage("You must give a parametr");
                 args.Player.SendErrorMessage("Use /spacelunch <player>");
+                return;
             }
             //TShock.Utils.FindPlayer(args.Parameters[0]); Use this
             foreach(TSPlayer a in TShock.Utils.FindPlayer(args.Parameters[0]))
@@ -322,6 +348,7 @@ namespace TerraJump
             if(args.Parameters.Count == 0)
             {
                 args.Player.SendErrorMessage("No parametr! Use /tjblock <number>");
+                return;
             }
             float a = float.Parse(args.Parameters[0]);
             args.Player.SendInfoMessage("You set block ID as " + a);
