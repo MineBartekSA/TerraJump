@@ -23,8 +23,6 @@ C:\Users\Andrzej\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.dll
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TerraJump.dll
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TerraJump.pdb
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\Newtonsoft.Json.dll
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TerrariaServer.exe
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.dll
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\HttpServer.dll
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\BCrypt.Net.dll
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\Mono.Data.Sqlite.dll
@@ -32,13 +30,6 @@ C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.csprojReso
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.dll
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.pdb
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\MySql.Data.dll
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\OTAPI.dll
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\Newtonsoft.Json.xml
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TerrariaServer.pdb
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.pdb
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.xml
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\HttpServer.pdb
-C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\HttpServer.xml
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\TerraJump.dll
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\TerraJump.pdb
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\HttpServer.dll
@@ -52,3 +43,6 @@ C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\Newtonsoft.Json.dll
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\OTAPI.dll
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\TerrariaServer.exe
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.dll
+C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\OTAPI.dll
+C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TerrariaServer.exe
+C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.dll
