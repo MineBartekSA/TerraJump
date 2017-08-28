@@ -7,10 +7,11 @@ using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 using System.Net;
+using OTAPI.Tile;
 
 namespace TerraJump
 {
-    [ApiVersion(1, 26)]
+    [ApiVersion(2, 01)]
     public class TerraJump : TerrariaPlugin
     {
         //Strings, ints, bools
@@ -18,7 +19,7 @@ namespace TerraJump
         private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
         private static Config conf;
         private static TJUDis UDis;
-        private string ver = "2.1.2"; // Pamiętaj by zmienić w kilku miejscach =P
+        private string ver = "2.1.6"; // Pamiętaj by zmienić w kilku miejscach =P
         public string constr;
         private bool isUpdates;
         private string getver;
@@ -43,7 +44,7 @@ namespace TerraJump
         }
         public override Version Version
         {
-            get { return new Version(2, 1, 2); } // Pamiętaj by zmienić w kilku miejscach =P
+            get { return new Version(2, 1, 6); } // Pamiętaj by zmienić w kilku miejscach =P
         }
         public override string Author
         {
@@ -60,20 +61,25 @@ namespace TerraJump
         public override void Initialize()
         {
             //Loading configs
-            cUP();
-            conf = Config.loadProcedure(_configFilePath);
-            UDis = TJUDis.start();
+            CUP();
+            conf = Config.LoadProcedure(_configFilePath);
+            UDis = TJUDis.Start();
             TShock.Log.Info("Finish of Config loading and starting loading plugin");
-            toggleJumpPads = conf.toggleJumpPads;
+            toggleJumpPads = conf.ToggleJumpPads;
             if(toggleJumpPads == false)
             {
-                TShock.Log.ConsoleError("You need to have a good config!");
+                TShock.Log.ConsoleError("[TerraJump]You need to have a good config!");
                 return;
             }
-            height = conf.height;
+            if(!TShock.ServerSideCharacterConfig.Enabled)
+            {
+                TShock.Log.ConsoleError("[TerraJump]You need to have SSC enabled!");
+                return;
+            }
+            height = conf.Height;
             JBID = conf.JBID;
-            pressureTriggerEnable = conf.pressureTriggerEnable;
-            reFormat = conf.reFormat;
+            pressureTriggerEnable = conf.PressureTriggerEnable;
+            reFormat = conf.ReFormat;
             red = conf.ReRed;
             green = conf.ReGrean;
             blue = conf.ReBlue;
@@ -105,15 +111,15 @@ namespace TerraJump
         //Commmands void
         void OnInitialize(EventArgs args)
         {
-            Commands.ChatCommands.Add(new Command("terrajump.admin.toggle", toggleJP, "tjtoggle", "tjt")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.toggle", ToggleJP, "tjtoggle", "tjt")
             {
                 HelpText = "Turns on/off TerraJump"
             });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.edit", editJPB, "tjblock", "tjb")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.edit", EditJPB, "tjblock", "tjb")
             {
                 HelpText = "Edit block of JumpPdas."
             });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.editH", editH, "tjheight", "tjh")
+            Commands.ChatCommands.Add(new Command("terrajump.admin.editH", EditH, "tjheight", "tjh")
             {
                 HelpText = "Edit height of jump"
             });
@@ -121,15 +127,15 @@ namespace TerraJump
             {
                 HelpText = "Reload config"
             });*/
-            Commands.ChatCommands.Add(new Command("terrajump.use", runPlayerUpdate, "jump", "j")
+            Commands.ChatCommands.Add(new Command("terrajump.use", RunPlayerUpdate, "jump", "j")
             { 
                 HelpText = "Jump command!"
             });
-            Commands.ChatCommands.Add(new Command(Info, "terrajump", "jp")
+            Commands.ChatCommands.Add(new Command(Info, "terrajump", "tj")
             {
                 HelpText = "Information of TerraJump"
             });
-            Commands.ChatCommands.Add(new Command(skyJump, "spacelaunch", "sl")
+            Commands.ChatCommands.Add(new Command(SkyJump, "spacelaunch", "sl")
             {
                 HelpText = "Launch your victim in to space! At your risk!!"
             });
@@ -137,7 +143,7 @@ namespace TerraJump
             {
                 HelpText = "Turns on/off TerraJump pressure plate jumps"
             });
-            Commands.ChatCommands.Add(new Command(re, "re", "reverse")
+            Commands.ChatCommands.Add(new Command(Re, "re", "reverse")
             {
                 HelpText = "For fun! It reverse text and send it!"
             });
@@ -162,11 +168,11 @@ namespace TerraJump
 
 
         //Commands execute voids
-        void toggleJP(CommandArgs args)
+        void ToggleJP(CommandArgs args)
         {
             toggleJumpPads = !toggleJumpPads;
             //Saving changes
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
+            conf = Config.Update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
             //End of saving
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
             args.Player.SendSuccessMessage("Succes of toggleing TerraJump. Now is {0}",
@@ -180,12 +186,12 @@ namespace TerraJump
                 return;
             }
             pressureTriggerEnable = !pressureTriggerEnable;
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
+            conf = Config.Update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
             TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
             args.Player.SendSuccessMessage("Succes of toggleing JumpPads. Now is {0}",
                 (pressureTriggerEnable) ? "ON" : "OFF");
         }
-        void editH(CommandArgs args)
+        void EditH(CommandArgs args)
         {
             if (toggleJumpPads == false)
             {
@@ -196,19 +202,20 @@ namespace TerraJump
             {
                 args.Player.SendErrorMessage("You must give a parametr");
                 args.Player.SendErrorMessage("Use /tjheight <number>");
+                return;
             }
             float a = float.Parse(args.Parameters[0]);
             args.Player.SendInfoMessage("You set height as " + a);
             height = (int)a;
             TShock.Log.ConsoleInfo("Height set as " + a);
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
+            conf = Config.Update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
         }
-        void reload(CommandArgs args)
+        void Reload(CommandArgs args)
         {
             // To rewrite!
             args.Player.SendInfoMessage("Reload complited!");
         }
-        void runPlayerUpdate(CommandArgs args)
+        void RunPlayerUpdate(CommandArgs args)
         {
             if (!toggleJumpPads)
                 return;
@@ -221,23 +228,46 @@ namespace TerraJump
             play.SendInfoMessage("Jump!");
             //updateTimer.Start();
         }
-        void Info (CommandArgs args)
+        void Info(CommandArgs args)
         {
-            args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
-            args.Player.SendInfoMessage("Now height is a " + height);
-            args.Player.SendInfoMessage("Now TerraJump are : {0}", (toggleJumpPads) ? "ON" : "OFF");
+            if(args.Parameters.Capacity == 0)
+            {
+                args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
+                args.Player.SendInfoMessage("Now height is a " + height);
+                args.Player.SendInfoMessage("Now TerraJump are : {0}", (toggleJumpPads) ? "ON" : "OFF");
+                args.Player.SendInfoMessage("Now JumpPads are : {0}", (pressureTriggerEnable) ? "ON" : "OFF");
+                args.Player.SendInfoMessage("To show all commands type /terrajump commands");
+            }
+            else
+            {
+                switch (args.Parameters[0])
+                {
+                    case "commands":
+                    case "com":
+                        {
+                            args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
+                            args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
+                            args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
+                            args.Player.SendInfoMessage("To disable or enable only for you JumpPads use /tjdisable or /tjd");
+                            args.Player.SendInfoMessage("To disable or enable a indicated JumpPad use /tjpaddisable or /tjpd");
+                            args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
+                            args.Player.SendInfoMessage("To jump use /jump or /j");
+                            break;
+                        }
+
+                    default:
+                        {
+                            args.Player.SendErrorMessage("Did you mean /terrajump commands?");
+                            args.Player.SendErrorMessage("Try to type command again");
+                            break;
+                        }
+                }
+            }
             if (isUpdates)
-                args.Player.SendInfoMessage("There is new update! Version " + getver);
-            args.Player.SendInfoMessage("Now JumpPads are : {0}",(pressureTriggerEnable) ? "ON" : "OFF");
-            args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
-            args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
-            args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
-            args.Player.SendInfoMessage("To disable or enable only for you JumpPads use /tjdisable or /tjd");
-            args.Player.SendInfoMessage("To disable or enable a indicated JumpPad use /tjpaddisable or /tjpd");
-            args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
-            args.Player.SendInfoMessage("To jump use /jump or /j");
+                args.Player.SendMessage("There is new update! Version " + getver, Microsoft.Xna.Framework.Color.Green);
+
         }
-        void skyJump (CommandArgs args)
+        void SkyJump (CommandArgs args)
         {
             if (toggleJumpPads == false)
             {
@@ -253,12 +283,13 @@ namespace TerraJump
             {
                 args.Player.SendErrorMessage("You must give a parametr");
                 args.Player.SendErrorMessage("Use /spacelunch <player>");
+                return;
             }
             //TShock.Utils.FindPlayer(args.Parameters[0]); Use this
             foreach(TSPlayer a in TShock.Utils.FindPlayer(args.Parameters[0]))
             {
                 //TP to surface
-                up(args.Player);
+                Up(args.Player);
                 //Jump
                 Thread.Sleep(100);
                 a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 1000;
@@ -270,12 +301,12 @@ namespace TerraJump
                 args.Player.SendInfoMessage(a.Name + " is in space now!");
             }
         }
-        void y(CommandArgs arg)
+        void Y(CommandArgs arg)
         {
             float y = arg.TPlayer.position.Y;
             arg.Player.SendInfoMessage("Your Y posision is now : " + y);
         }
-        void re(CommandArgs arg)
+        void Re(CommandArgs arg)
         {
             if (toggleJumpPads == false)
             {
@@ -302,12 +333,12 @@ namespace TerraJump
             }
             TShock.Log.Info("Reversing all world complete!");
             TShock.Log.Info("Now this is " + par);
-            string message = formatRe(par, reFormat, arg.Player);
+            string message = FormatRe(par, reFormat, arg.Player);
             TShock.Log.Info("Not before formating is " + message);
             arg.Player.SendMessageFromPlayer(message,red,green,blue,1);
             TShock.Log.Info("Reversing sending complete!");
         }
-        void editJPB(CommandArgs args)
+        void EditJPB(CommandArgs args)
         {
             if (toggleJumpPads == false)
             {
@@ -317,12 +348,13 @@ namespace TerraJump
             if(args.Parameters.Count == 0)
             {
                 args.Player.SendErrorMessage("No parametr! Use /tjblock <number>");
+                return;
             }
             float a = float.Parse(args.Parameters[0]);
             args.Player.SendInfoMessage("You set block ID as " + a);
             JBID = (int)a;
             TShock.Log.ConsoleInfo("Block ID set as " + a);
-            conf = Config.update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
+            conf = Config.Update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
         }
         void TJDis (CommandArgs args)
         {
@@ -330,13 +362,13 @@ namespace TerraJump
 
             if(ifExist)
             {
-                UDis =  TJUDis.remove(args.Player);
+                UDis =  TJUDis.Remove(args.Player);
                 userlist = UDis.UList;
                 args.Player.SendInfoMessage("You can use now JumpPads");
             }
             else if (!ifExist)
             {
-                UDis = TJUDis.add(args.Player);
+                UDis = TJUDis.Add(args.Player);
                 userlist = UDis.UList;
                 args.Player.SendInfoMessage("You can't use now JumpPads");
             }
@@ -356,7 +388,7 @@ namespace TerraJump
         void JPDisNext(float x, float y, TSPlayer p)
         {
             TShock.Log.Info("Starting adding to dataset");
-            UDis = TJUDis.add(x, y);
+            UDis = TJUDis.Add(x, y);
             XYSet = UDis.XYSet;
             isDisabling.Remove(p);
             p.SendInfoMessage("This JumpPad is now disable!");
@@ -364,7 +396,7 @@ namespace TerraJump
         void JPEnaNext(float x, float y, TSPlayer p)
         {
             TShock.Log.Info("Starting removing from dataset");
-            UDis = TJUDis.remove(x, y);
+            UDis = TJUDis.Remove(x, y);
             XYSet = UDis.XYSet;
             isDisabling.Remove(p);
             p.SendInfoMessage("This JumpPad is now enable!");
@@ -376,7 +408,7 @@ namespace TerraJump
         //Presure Plate trigger void
         void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
         {
-            Tile underBlock = Main.tile[args.TileX, args.TileY + 1];
+            ITile underBlock = Main.tile[args.TileX, args.TileY + 1];
             if (underBlock.type != JBID)
                 return;
             if (!pressureTriggerEnable)
@@ -388,27 +420,30 @@ namespace TerraJump
             }
             else if (userlist.Contains(TShock.Players[args.Object.whoAmI].Name))
                 return;
-            else if (isDisabling.Contains(TShock.Players[args.Object.whoAmI]) && isDisable(args))
+            else if (isDisabling.Contains(TShock.Players[args.Object.whoAmI]) && IsDisable(args))
             {
                 JPEnaNext(args.TileX, args.TileY, TShock.Players[args.Object.whoAmI]);
                 Thread.Sleep(500);
             }
-            else if (isDisable(args))
+            else if (IsDisable(args))
                 return;
 
-            TShock.Log.Info("Pressure plate triggered");
+            //TShock.Log.Info("Pressure plate triggered");
             //TShock.Log.ConsoleInfo("[PlTPP]Starting procedure");
             bool pds = false;
             TSPlayer ow = TShock.Players[args.Object.whoAmI];
-            Tile pressurePlate = Main.tile[args.TileX, args.TileY];
-            Tile upBlock = Main.tile[args.TileX, args.TileY - 1];
+            ITile pressurePlate = Main.tile[args.TileX, args.TileY];
+            ITile upBlock = Main.tile[args.TileX, args.TileY - 1];
+
+            
+
             if (underBlock.type == JBID)
             {
                 //TShock.Log.ConsoleInfo("[PlTPP]O on 'Under' this slime block are!");
                 bool ulb = false;
                 bool urb = false;
-                Tile underLeftBlock = Main.tile[args.TileX - 1, args.TileY + 1];
-                Tile underRightBlock = Main.tile[args.TileX + 1, args.TileY + 1];
+                ITile underLeftBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+                ITile underRightBlock = Main.tile[args.TileX + 1, args.TileY + 1];
                 if (underLeftBlock.type == JBID)
                 {
                     //TShock.Log.ConsoleInfo("[PlTPP]Ok on left!");
@@ -427,9 +462,10 @@ namespace TerraJump
                 //TShock.Log.ConsoleInfo("[PlTPP]Can't find any SlimeBlocks! Stoping");
                 return;
             }
+
+
             if (isDisabling.Contains(TShock.Players[args.Object.whoAmI]))
                 JPDisNext(args.TileX, args.TileY, TShock.Players[args.Object.whoAmI]);
-            //TShock.Log.Info("Found you!");
             if (pds)
             { 
                 ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
@@ -443,7 +479,7 @@ namespace TerraJump
 
 
         //Chceck Update VOID
-        void cUP()
+        void CUP()
         {
             try
             {
@@ -458,10 +494,8 @@ namespace TerraJump
             }
 
             StreamReader readfile = new StreamReader(TShock.SavePath + @"\Ver.txt");
-            getver =  readfile.ReadLine();
+            getver = readfile.ReadLine();
             readfile.Close();
-
-            char stabileOrUnstabile = getver[6];
 
             int firstGetver = (int)getver[0];
             int secondGetver = (int)getver[2];
@@ -476,13 +510,6 @@ namespace TerraJump
 
             if (firstGetver > firstver && secondGetver > secondver && thirdGetver > thirdver)
             {
-                if(stabileOrUnstabile.ToString() == "U")
-                {
-                    TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
-                    TShock.Log.ConsoleInfo("[TerraJump Update] This new version is for unstable version!");
-                    isUpdates = true;
-                    return;
-                }
                 TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
                 isUpdates = true;
                 return;
@@ -499,7 +526,7 @@ namespace TerraJump
 
 
         //Is Disable
-        bool isDisable(TriggerPressurePlateEventArgs<Player> args)
+        bool IsDisable(TriggerPressurePlateEventArgs<Player> args)
         {
             List<int> Xes = new List<int>();
             List<int> Yes = new List<int>();
@@ -536,7 +563,7 @@ namespace TerraJump
 
 
         //Format reverse VOID
-        string formatRe(string mess, string formstring, TSPlayer arg)
+        string FormatRe(string mess, string formstring, TSPlayer arg)
         {
             string format = "";
 
@@ -549,7 +576,7 @@ namespace TerraJump
 
 
         //Other Voids
-        void up (TSPlayer player)
+        void Up (TSPlayer player)
         {
             float x = player.TPlayer.position.X;
             float pos = player.TPlayer.position.Y;
