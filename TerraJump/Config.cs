@@ -7,7 +7,7 @@ namespace TerraJump
     public class Config
     {
         public bool ToggleJumpPads { get; set; }
-        public int Height { get; set; }
+        public float Height { get; set; }
         public int JBID { get; set; }
         public bool PressureTriggerEnable { get; set; }
         public string ReFormat { get; set; }
@@ -31,7 +31,7 @@ namespace TerraJump
                 return (JSON);
             }
         }
-        public static Config Update(string path, bool TJP, int H, int JBID, bool PTE, string rForm, byte r, byte g, byte b)
+        public static Config Update(string path, bool TJP, float H, int JBID, bool PTE, string rForm, byte r, byte g, byte b)
         {
             TShock.Log.Info("Updating config");
             Config c = new Config
