@@ -4,6 +4,6 @@
 
 /packages/Octokit.0.23.0
 /TerraJump/packages.config
-/TerraJump/obj
-/TerraJump/bin
-/.vs
+/TerraJump/obj/
+/TerraJump/bin/
+/.vs/

@@ -39,10 +39,7 @@ C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\Mono.Data.Sqlite.dll
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.csprojResolveAssemblyReference.cache
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.dll
 C:\Users\Acer\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.pdb
-C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\Newtonsoft.Json.dll
-C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\OTAPI.dll
-C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\TerrariaServer.exe
-C:\Users\Acer\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.dll
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\OTAPI.dll
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TerrariaServer.exe
 C:\Users\SKOCZEN\Source\Repos\TerraJump\TerraJump\bin\Debug\TShockAPI.dll
+C:\Users\Acer\Source\Repos\TerraJump\TerraJump\obj\Debug\TerraJump.csproj.CoreCompileInputs.cache
