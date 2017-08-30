@@ -4,3 +4,7 @@
 
 /packages/Octokit.0.23.0
 /TerraJump/packages.config
+/TerraJump/obj/Debug/TerraJump.csproj.CoreCompileInputs.cache
+/TerraJump/obj/Debug
+/.vs/TerraJump/v15/sqlite3/storage.ide
+/.vs/TerraJump/v15/sqlite3
