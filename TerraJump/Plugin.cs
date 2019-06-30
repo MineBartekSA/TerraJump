@@ -2,577 +2,452 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.IO;
-using System.Data;
+using System.Linq;
 using Terraria;
 using TerrariaApi.Server;
 using TShockAPI;
 using System.Net;
-using OTAPI.Tile;
+using Microsoft.Xna.Framework;
+using Terraria.ID;
 
 namespace TerraJump
 {
-    [ApiVersion(2, 01)]
+    [ApiVersion(2, 1)]
     public class TerraJump : TerrariaPlugin
     {
-        //Strings, ints, bools
-        private TSPlayer play;
-        private string _configFilePath = Path.Combine(TShock.SavePath, "TerraJump.json");
-        private static Config conf;
-        private static TJUDis UDis;
-        private string ver = "2.1.6"; // Pamiętaj by zmienić w kilku miejscach =P
-        public string constr;
-        private bool isUpdates;
-        private string getver;
-        private List<TSPlayer> isDisabling = new List<TSPlayer>();
-        //Configs
-        private bool toggleJumpPads;
-        private int JBID;
-        private float height;
-        private bool pressureTriggerEnable;
-        private string reFormat;
-        private byte red;
-        private byte green;
-        private byte blue;
-        private List<string> userlist;
-        private DataSet XYSet;
+        private readonly Version ver = new Version(2, 2, 0);
+        private static Config _config;
+        private static DisabledManager _dMgr;
+        private Version updates;
+        private string getVer;
+        private int tick = 1;
 
-        //End of this :D
-        //Load stage
-        public override string Name
-        {
-            get { return "TerraJump"; }
-        }
-        public override Version Version
-        {
-            get { return new Version(2, 1, 6); } // Pamiętaj by zmienić w kilku miejscach =P
-        }
-        public override string Author
-        {
-            get { return "MineBartekSA"; }
-        }
-        public override string Description
-        {
-            get { return "It's simple JumpPads plugin for Tshock!"; }
-        }
-        public TerraJump(Main game) : base(game)
-        {
-            //Nothing!
-        }
+        public override string Name => "TerraJump";
+        public override Version Version => ver;
+        public override string Author => "MineBartekSA";
+        public override string Description => "It's simple Jump Pads plugin for TShock!";
+
+        public TerraJump(Main game) : base(game) { }
+
         public override void Initialize()
         {
-            //Loading configs
-            CUP();
-            conf = Config.LoadProcedure(_configFilePath);
-            UDis = TJUDis.Start();
-            TShock.Log.Info("Finish of Config loading and starting loading plugin");
-            toggleJumpPads = conf.ToggleJumpPads;
-            if(toggleJumpPads == false)
-            {
-                TShock.Log.ConsoleError("[TerraJump]You need to have a good config!");
-                return;
-            }
+            CheckUpdates();
+            _config = Config.LoadProcedure();
+            _dMgr = DisabledManager.Start();
             if(!TShock.ServerSideCharacterConfig.Enabled)
             {
                 TShock.Log.ConsoleError("[TerraJump]You need to have SSC enabled!");
                 return;
             }
-            height = conf.Height;
-            JBID = conf.JBID;
-            pressureTriggerEnable = conf.PressureTriggerEnable;
-            reFormat = conf.ReFormat;
-            red = conf.ReRed;
-            green = conf.ReGrean;
-            blue = conf.ReBlue;
-            userlist = UDis.UList;
-            XYSet = UDis.XYSet;
-            //Hooks
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             ServerApi.Hooks.PlayerTriggerPressurePlate.Register(this, OnPlayerTriggerPressurePlate);
-            TShock.Log.Info("Init complate!");
+            ServerApi.Hooks.GameUpdate.Register(this, OnUpdate);
+            TShock.Log.Info("Initialization complete!");
         }
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                //UnHooks
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
                 ServerApi.Hooks.PlayerTriggerPressurePlate.Deregister(this, OnPlayerTriggerPressurePlate);
+                ServerApi.Hooks.GameUpdate.Deregister(this, OnUpdate);
             }
             base.Dispose(disposing);
         }
-        //End Load stage
 
-
-
-        //Voids
-
-
-
-        //Commmands void
-        void OnInitialize(EventArgs args)
+        private void OnInitialize(EventArgs args)
         {
-            Commands.ChatCommands.Add(new Command("terrajump.admin.toggle", ToggleJP, "tjtoggle", "tjt")
+            Commands.ChatCommands.Add(new Command(TerraJumpCommand, "terrajump", "tj")
             {
-                HelpText = "Turns on/off TerraJump"
+                HelpText = "TerraJump main command"
             });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.edit", EditJPB, "tjblock", "tjb")
+            Commands.ChatCommands.Add(new Command("terrajump.use", Jump, "jump", "j")
             {
-                HelpText = "Edit block of JumpPdas."
+                HelpText = "Jump command"
             });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.editH", EditH, "tjheight", "tjh")
-            {
-                HelpText = "Edit height of jump"
-            });
-            /*Commands.ChatCommands.Add(new Command("terrajump.admin.reload", reload, "tjreload", "tjr")
-            {
-                HelpText = "Reload config"
-            });*/
-            Commands.ChatCommands.Add(new Command("terrajump.use", RunPlayerUpdate, "jump", "j")
-            { 
-                HelpText = "Jump command!"
-            });
-            Commands.ChatCommands.Add(new Command(Info, "terrajump", "tj")
-            {
-                HelpText = "Information of TerraJump"
-            });
-            Commands.ChatCommands.Add(new Command(SkyJump, "spacelaunch", "sl")
-            {
-                HelpText = "Launch your victim in to space! At your risk!!"
-            });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.pressuretoggle", JPTog, "tjpressuretoggle", "tjpt")
-            {
-                HelpText = "Turns on/off TerraJump pressure plate jumps"
-            });
-            Commands.ChatCommands.Add(new Command(Re, "re", "reverse")
-            {
-                HelpText = "For fun! It reverse text and send it!"
-            });
-            Commands.ChatCommands.Add(new Command("terrajump.disable", TJDis, "tjdisable", "tjd")
-            {
-                HelpText = "Disable or enable only for you TerraJump"
-            });
-            Commands.ChatCommands.Add(new Command("terrajump.admin.disablejumppad", JPDis, "tjpaddisable", "tjpd")
-            {
-                HelpText = "Disable or enable a indicated JumpPad"
-            });
-            //For Dev! Only!
-            /*
-            Commands.ChatCommands.Add(new Command("terrajump.dev", y, "gety", "gy", "y")
-            {
-                HelpText = "Only for dev!"
-            });
-            */
         }
-        //End Command void
 
-
-
-        //Commands execute voids
-        void ToggleJP(CommandArgs args)
+        private void OnUpdate(EventArgs args)
         {
-            toggleJumpPads = !toggleJumpPads;
-            //Saving changes
-            conf = Config.Update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
-            //End of saving
-            TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
-            args.Player.SendSuccessMessage("Succes of toggleing TerraJump. Now is {0}",
-                (toggleJumpPads) ? "ON" : "OFF");
-        }
-        void JPTog(CommandArgs args)
-        {
-            if (toggleJumpPads == false)
+            if (tick == 60)
             {
-                TShock.Log.ConsoleError("You need to turn on your plugin!");
-                return;
+                tick = 1;
+                var l = new List<string>();
+                foreach (var dis in _dMgr.PadDisables)
+                {
+                    if (dis.Started.Add(TimeSpan.FromSeconds(20)) > DateTime.Now) continue;
+                    TShock.Players.First(p => p.UUID == dis.Uuid).SendInfoMessage("You are no longer going to disable next jump pad");
+                    l.Add(dis.Uuid);
+                }
+                l.ForEach(uuid => _dMgr.PadDisables.RemoveAll(user => user.Uuid == uuid));
             }
-            pressureTriggerEnable = !pressureTriggerEnable;
-            conf = Config.Update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
-            TShock.Log.ConsoleInfo(args.Player.Name + " toggle TerraJump");
-            args.Player.SendSuccessMessage("Succes of toggleing JumpPads. Now is {0}",
-                (pressureTriggerEnable) ? "ON" : "OFF");
+            tick++;
         }
-        void EditH(CommandArgs args)
+
+        #region Command Functions
+        private void TerraJumpCommand(CommandArgs args)
         {
-            if (toggleJumpPads == false)
+            if (!_config.Enabled)
             {
-                TShock.Log.ConsoleError("You need to turn on your plugin!");
+                if (args.Parameters.Count >= 1 && args.Parameters[0] == "toggle")
+                    Toggle(args);
+                else
+                    args.Player.SendErrorMessage("TerraJump is currently disabled! Use /terrajump toggle to enabled it");
                 return;
             }
             if (args.Parameters.Count == 0)
+                args.Parameters.Add("null");
+            switch (args.Parameters[0])
             {
-                args.Player.SendErrorMessage("You have to give a parameter");
-                args.Player.SendErrorMessage("Use /tjheight <number>");
-                args.Player.SendErrorMessage("Example: /tjheight 20,5");
+                case "t":
+                case "tog":
+                case "toggle":
+                    Toggle(args);
+                    break;
+                case "e":
+                case "ed":
+                case "edit":
+                    Edit(args);
+                    break;
+                case "d":
+                case "dis":
+                case "disable":
+                    Disable(args);
+                    break;
+                case "r":
+                case "rel":
+                case "reload":
+                    Reload(args);
+                    break;
+                default:
+                    SendHelp(args.Player);
+                    break;
+            }
+        }
+
+        private void SendHelp(TSPlayer player)
+        {
+            player.SendSuccessMessage("TerraJump v{0}", ver);
+            if (updates != null)
+                player.SendMessage($"Update to version {updates} is available!", Color.Aqua);
+            player.SendInfoMessage("Usage: /terrajump <command>");
+            player.SendInfoMessage("Commands:");
+            player.SendInfoMessage(" - toggle - Toggle TerraJump");
+            player.SendInfoMessage(" - edit - Edit jump pad block and force");
+            player.SendInfoMessage(" - disable - Disable jump pads");
+            player.SendInfoMessage(" - reload - Reload config");
+            player.SendInfoMessage("You can also use the /jump command to launch yourself");
+        }
+
+        private void Toggle(CommandArgs args)
+        {
+            if (!args.Player.HasPermission("terrajump.admin.toggle"))
+            {
+                args.Player.SendErrorMessage("You don't have enough permissions to use this command!");
                 return;
             }
-            float a = float.Parse(args.Parameters[0]);
-            if(a < 10)
+            _config.Enabled = !_config.Enabled;
+            _config.Update();
+            TShock.Log.ConsoleInfo(args.Player.Name + " toggled TerraJump");
+            args.Player.SendSuccessMessage("TerraJump now is {0}!", (_config.Enabled) ? "Enabled" : "Disabled");
+        }
+
+        private void Edit(CommandArgs args)
+        {
+            if (!args.Player.HasPermission("terrajump.admin.edit"))
             {
-                args.Player.SendErrorMessage("You can't set less tank 10!");
+                args.Player.SendErrorMessage("You don't have enough permissions to use this command!");
                 return;
             }
-            args.Player.SendInfoMessage("You set height as " + a);
-            height = a;
-            TShock.Log.ConsoleInfo("Height set as " + a);
-            conf = Config.Update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
-        }
-        void Reload(CommandArgs args)
-        {
-            // To rewrite!
-            args.Player.SendInfoMessage("Reload complited!");
-        }
-        void RunPlayerUpdate(CommandArgs args)
-        {
-            if (!toggleJumpPads)
-                return;
-            else if (userlist.Contains(args.Player.Name))
-                return;
-            play = args.Player;
-            Thread.Sleep(500);
-            play.TPlayer.velocity.Y = play.TPlayer.velocity.Y - height;
-            TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", play.Index);
-            play.SendInfoMessage("Jump!");
-            //updateTimer.Start();
-        }
-        void Info(CommandArgs args)
-        {
-            if(args.Parameters.Capacity == 0)
+            if (args.Parameters.Count == 1)
+                args.Parameters.Add("null");
+            switch (args.Parameters[1])
             {
-                args.Player.SendInfoMessage("TerraJump plugin on version " + ver);
-                args.Player.SendInfoMessage("Height is a " + height);
-                args.Player.SendInfoMessage("TerraJump is : {0}", (toggleJumpPads) ? "ON" : "OFF");
-                args.Player.SendInfoMessage("JumpPads are : {0}", (pressureTriggerEnable) ? "ON" : "OFF");
-                args.Player.SendInfoMessage("To show all commands type /terrajump commands");
+                case "t":
+                case "tile":
+                    ChangeTile(args);
+                    break;
+                case "f":
+                case "force":
+                    ChangeHeight(args);
+                    break;
+                default:
+                    args.Player.SendInfoMessage("Usage: /terrajump edit <subcommand> [param]");
+                    args.Player.SendInfoMessage("Subcommands:");
+                    args.Player.SendInfoMessage(" - tile [tile id] - Check or change the jump pad tile");
+                    args.Player.SendInfoMessage(" - force [number] - Check or change the jump height");
+                    break;
             }
+        }
+
+        private void ChangeTile(CommandArgs args)
+        {
+            if (args.Parameters.Count <= 2)
+            {
+                var tile = typeof(TileID).GetFields().Where(t => (ushort) t.GetValue(null) == _config.BlockId).Select(t => t.Name).First();
+                args.Player.SendInfoMessage("Current jump pads tile is {0} ({1})", tile, _config.BlockId);
+                return;
+            }
+            var id = (int)float.Parse(args.Parameters[2]);
+            var tileName = typeof(TileID).GetFields().Where(t => (ushort)t.GetValue(null) == id).Select(t => t.Name).First();
+            if (tileName == null)
+            {
+                args.Player.SendErrorMessage("Invalid tile id!");
+                return;
+            }
+            _config.BlockId = id;
+            args.Player.SendSuccessMessage("You have set jump pad tile to {0}", tileName);
+            TShock.Log.ConsoleInfo("Jump Pad Tile ID = {0}", _config.BlockId);
+            _config.Update();
+        }
+
+        private void ChangeHeight(CommandArgs args)
+        {
+            if (args.Parameters.Count <= 2)
+            {
+                args.Player.SendInfoMessage("Currently the force is set to {0}", _config.Height);
+                return;
+            }
+            var nh = float.Parse(args.Parameters[2]);
+            if(nh < 10)
+            {
+                args.Player.SendErrorMessage("You can't set jump force to less than 10!");
+                return;
+            }
+            _config.Height = nh;
+            args.Player.SendSuccessMessage("You have set the jump force to {0}", _config.Height);
+            TShock.Log.ConsoleInfo("Jump Height = {0}", _config.Height);
+            _config.Update();
+        }
+
+        private void Reload(CommandArgs args)
+        {
+            if (!args.Player.HasPermission("terrajump.admin.reload"))
+            {
+                args.Player.SendErrorMessage("You don't have enough permission to use this command!");
+                return;
+            }
+            if (_config.Reload())
+                args.Player.SendSuccessMessage("Reload complete!");
             else
+                args.Player.SendErrorMessage("Failed to reload config!");
+        }
+
+        private void Disable(CommandArgs args)
+        {
+            if (!(args.Player.HasPermission("terrajump.admin.disable") || args.Player.HasPermission("terrajump.disable")))
             {
-                switch (args.Parameters[0])
+                args.Player.SendErrorMessage("You don't have enough permissions to use this command!");
+                return;
+            }
+            if (args.Parameters.Count == 1)
+                args.Parameters.Add("null");
+            switch (args.Parameters[1])
+            {
+                case "s":
+                case "self":
+                    DisableSelf(args);
+                    break;
+                case "p":
+                case "pad":
+                    DisablePad(args, true);
+                    break;
+                case "g":
+                case "global":
+                    if (args.Player.HasPermission("terrajump.admin.disable"))
+                        DisablePad(args, false);
+                    else
+                        args.Player.SendErrorMessage("You don't have enough permission to use this command!");
+                    break;
+                default:
+                    args.Player.SendInfoMessage("Usage: /terrajump disable <subcommand>");
+                    args.Player.SendInfoMessage("Subcommands:");
+                    args.Player.SendInfoMessage(" - self - Disable jump pads for self");
+                    args.Player.SendInfoMessage(" - pad - Disable specific jump pad");
+                    args.Player.SendInfoMessage(" - global - Disable a jump pad globally");
+                    break;
+            }
+        }
+
+        private void DisableSelf(CommandArgs args)
+        {
+            if (_dMgr.UserList.Count(u => u.Uuid == args.Player.UUID) == 0)
+            {
+                if (_dMgr.AddUser(new DisabledManager.TjUser
                 {
-                    case "commands":
-                    case "com":
-                        {
-                            args.Player.SendInfoMessage("To toggle JumpPads use /tjpressuretoggle or /tjpt");
-                            args.Player.SendInfoMessage("To change height use /tjheight <block> or /tjh <block>");
-                            args.Player.SendInfoMessage("To change JumpPads block use /tjblock <title ID> or /tjb <Title ID>");
-                            args.Player.SendInfoMessage("To disable or enable only for you JumpPads use /tjdisable or /tjd");
-                            args.Player.SendInfoMessage("To disable or enable a indicated JumpPad use /tjpaddisable or /tjpd");
-                            args.Player.SendInfoMessage("To toggle TerraJump use /tjtoggle or /tjt");
-                            args.Player.SendInfoMessage("To jump use /jump or /j");
-                            break;
-                        }
+                    Uuid = args.Player.UUID,
+                    SelfDisabled = true
+                }))
+                    args.Player.SendSuccessMessage("You have disabled jump pads for yourself!");
+                else
+                    args.Player.SendErrorMessage("Failed to disable jump pads!");
+                return;
+            }
+            var user = _dMgr.UserList.First(u => u.Uuid == args.Player.UUID);
+            if (user.SelfDisabled)
+            {
+                user.SelfDisabled = false;
+                if (_dMgr.ModifyUser(user))
+                    args.Player.SendSuccessMessage("You have enabled jump pads for yourself!");
+                else
+                    args.Player.SendErrorMessage("Failed to enable jump pads!");
+                return;
+            }
 
-                    default:
+            user.SelfDisabled = true;
+            if (_dMgr.ModifyUser(user))
+                args.Player.SendSuccessMessage("You have disabled jump pads for yourself!");
+            else
+                args.Player.SendErrorMessage("Failed to disable jump pads!");
+        }
+
+        private void DisablePad(CommandArgs args, bool isSelf)
+        {
+            _dMgr.PadDisables.Add(new DisabledManager.PadDisable
+            {
+                Uuid = args.Player.UUID,
+                IsSelf = isSelf,
+                Started = DateTime.Now
+            });
+            args.Player.SendInfoMessage("Please stand on a jump pad you want do disable");
+        }
+
+        private void Jump(CommandArgs args)
+        {
+            if (!_config.Enabled)
+                return;
+            if (_dMgr.UserList.Count(u => u.Uuid == args.Player.UUID && u.SelfDisabled) != 0)
+                return;
+            Thread.Sleep(500);
+            args.Player.TPlayer.velocity.Y = args.Player.TPlayer.velocity.Y - _config.Height;
+            TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", args.Player.Index);
+            args.Player.SendInfoMessage("Jump!");
+        }
+        #endregion
+
+        private void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
+        {
+            if (!_config.Enabled)
+                return;
+            var underBlock = Main.tile[args.TileX, args.TileY + 1];
+            if (underBlock.type != _config.BlockId)
+                return;
+            var underLeftBlock = Main.tile[args.TileX - 1, args.TileY + 1];
+            var underRightBlock = Main.tile[args.TileX + 1, args.TileY + 1];
+            if (underRightBlock.type != _config.BlockId || underLeftBlock.type != _config.BlockId)
+                return;
+            if (!TShock.Players[args.Object.whoAmI].HasPermission("terrajump.use"))
+            {
+                TShock.Players[args.Object.whoAmI].SendErrorMessage("You don't have enough permissions to do this!");
+                return;
+            }
+            var ow = TShock.Players[args.Object.whoAmI];
+            if (_dMgr.PadDisables.Count(u => u.Uuid == ow.UUID) != 0)
+            {
+                var dis = _dMgr.PadDisables.Find(u => u.Uuid == ow.UUID);
+                if (dis.IsSelf)
+                {
+                    _dMgr.PadDisables.Remove(dis);
+                    if (_dMgr.UserList.Count(u => u.Uuid == ow.UUID) == 0)
+                    {
+                        if (_dMgr.AddUser(new DisabledManager.TjUser
                         {
-                            args.Player.SendErrorMessage("Did you mean /terrajump commands?");
-                            args.Player.SendErrorMessage("Try to type command again");
-                            break;
+                            Uuid = ow.UUID,
+                            SelfDisabled = false,
+                            DisabledPads = { new DisabledManager.PadPoint { X = args.TileX, Y = args.TileY } }
+                        }))
+                        {
+                            ow.SendSuccessMessage("Successfully disabled this jump pad for you!");
+                            return;
                         }
+                        ow.SendErrorMessage("Failed to disable this jump pad for you!");
+                    }
+
+                    var user = _dMgr.UserList.Find(u => u.Uuid == ow.UUID);
+                    if (user.DisabledPads.RemoveAll(p => p.X == args.TileX && p.Y == args.TileY) == 0)
+                    {
+                        user.DisabledPads.Add(new DisabledManager.PadPoint { X = args.TileX, Y = args.TileY });
+                        if (_dMgr.ModifyUser(user))
+                        {
+                            ow.SendSuccessMessage("Successfully disabled this jump pad for you!");
+                            return;
+                        }
+                        ow.SendErrorMessage("Failed to disable this jump pad for you!");
+                    }
+                    if (_dMgr.ModifyUser(user))
+                        ow.SendSuccessMessage("Successfully enabled this jump pad for you!");
+                    else
+                    {
+                        ow.SendErrorMessage("Failed to enabled this jump pad for you!");
+                        return;
+                    }
                 }
-            }
-            if (isUpdates)
-                args.Player.SendMessage("There is new update! Version " + getver, Microsoft.Xna.Framework.Color.Green);
-
-        }
-        void SkyJump (CommandArgs args)
-        {
-            if (toggleJumpPads == false)
-            {
-                TShock.Log.ConsoleError("You need to turn on your plugin!");
-                return;
-            }
-            if (args.Player.RealPlayer)
-            {
-                args.Player.SendErrorMessage("You have to run this command from console.");
-                return;
-            }
-            if(args.Parameters.Count == 0)
-            {
-                args.Player.SendErrorMessage("You have to give a parametr");
-                args.Player.SendErrorMessage("Use /spacelunch <player>");
-                return;
-            }
-            //TShock.Utils.FindPlayer(args.Parameters[0]); Use this
-            foreach(TSPlayer a in TShock.Utils.FindPlayer(args.Parameters[0]))
-            {
-                //TP to surface
-                Up(args.Player);
-                //Jump
-                Thread.Sleep(100);
-                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 1000;
-                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", a.Index);
-                /*Thread.Sleep(200);
-                a.TPlayer.velocity.Y = a.TPlayer.velocity.Y - 1000;
-                TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", a.Index);*/
-                a.SendInfoMessage("You have been launch in to space! Hahahahahaha!");
-                args.Player.SendInfoMessage(a.Name + " is in space now!");
-            }
-        }
-        void Y(CommandArgs arg)
-        {
-            float y = arg.TPlayer.position.Y;
-            arg.Player.SendInfoMessage("Your Y posision is now : " + y);
-        }
-        void Re(CommandArgs arg)
-        {
-            if (toggleJumpPads == false)
-            {
-                TShock.Log.ConsoleError("You need to turn on your plugin!");
-                return;
-            }
-            string par = "";
-            string rew = "";
-            char[] wleng;
-            int list = arg.Parameters.Count;
-            TShock.Log.Info("You have created a " + list + " parametrs!");
-            for (int i = list - 1; i >= 0; i--)
-            {
-                string word = arg.Parameters[i];
-                TShock.Log.Info("Word for now is " + word + "!");
-                wleng = word.ToCharArray();
-                TShock.Log.Info("World have " + wleng + " characters!");
-                Array.Reverse(wleng);
-                rew = new string(wleng);
-                TShock.Log.Info("Reversing complete! Now is " + rew + "!");
-                par += " ";
-                par += rew;
-                rew = "";
-            }
-            TShock.Log.Info("Reversing all world complete!");
-            TShock.Log.Info("Now this is " + par);
-            string message = FormatRe(par, reFormat, arg.Player);
-            TShock.Log.Info("Not before formating is " + message);
-            arg.Player.SendMessageFromPlayer(message,red,green,blue,1);
-            TShock.Log.Info("Reversing sending complete!");
-        }
-        void EditJPB(CommandArgs args)
-        {
-            if (toggleJumpPads == false)
-            {
-                TShock.Log.ConsoleError("You need to turn on your plugin!");
-                return;
-            }
-            if(args.Parameters.Count == 0)
-            {
-                args.Player.SendErrorMessage("No paramater! Use /tjblock <number>");
-                return;
-            }
-            float a = float.Parse(args.Parameters[0]);
-            args.Player.SendInfoMessage("You set block ID as " + a);
-            JBID = (int)a;
-            TShock.Log.ConsoleInfo("Block ID set as " + a);
-            conf = Config.Update(_configFilePath, toggleJumpPads, height, JBID, pressureTriggerEnable, reFormat, red, green, blue);
-        }
-        void TJDis (CommandArgs args)
-        {
-            bool ifExist = userlist.Contains(args.Player.Name);
-
-            if(ifExist)
-            {
-                UDis =  TJUDis.Remove(args.Player);
-                userlist = UDis.UList;
-                args.Player.SendInfoMessage("You can use now JumpPads");
-            }
-            else if (!ifExist)
-            {
-                UDis = TJUDis.Add(args.Player);
-                userlist = UDis.UList;
-                args.Player.SendInfoMessage("You can't use now JumpPads");
-            }
-        }
-        void JPDis (CommandArgs args)
-        {
-            if (userlist.Contains(args.Player.Name))
-            {
-                args.Player.SendErrorMessage("You can't use JumpPads right now! Use command /tjdisable to enable them for you!");
-                return;
-            }
-
-            isDisabling.Add(args.Player);
-            args.Player.SendInfoMessage("Please stand on JumpPad");
-            return;
-        }
-        void JPDisNext(float x, float y, TSPlayer p)
-        {
-            TShock.Log.Info("Starting adding to dataset");
-            UDis = TJUDis.Add(x, y);
-            XYSet = UDis.XYSet;
-            isDisabling.Remove(p);
-            p.SendInfoMessage("This JumpPad is now disabled!");
-        }
-        void JPEnaNext(float x, float y, TSPlayer p)
-        {
-            TShock.Log.Info("Starting removing from dataset");
-            UDis = TJUDis.Remove(x, y);
-            XYSet = UDis.XYSet;
-            isDisabling.Remove(p);
-            p.SendInfoMessage("This JumpPad is now enabled!");
-        }
-        //End commands ecexute voids
-
-
-
-        //Presure Plate trigger void
-        void OnPlayerTriggerPressurePlate(TriggerPressurePlateEventArgs<Player> args)
-        {
-            ITile underBlock = Main.tile[args.TileX, args.TileY + 1];
-            if (underBlock.type != JBID)
-                return;
-            if (!pressureTriggerEnable)
-                return;
-            else if (!TShock.Players[args.Object.whoAmI].HasPermission("terrajump.usepad"))
-            {
-                TShock.Players[args.Object.whoAmI].SendErrorMessage("You don't have permission to do this!");
-                return;
-            }
-            else if (userlist.Contains(TShock.Players[args.Object.whoAmI].Name))
-                return;
-            else if (isDisabling.Contains(TShock.Players[args.Object.whoAmI]) && IsDisable(args))
-            {
-                JPEnaNext(args.TileX, args.TileY, TShock.Players[args.Object.whoAmI]);
-                Thread.Sleep(100);
-            }
-            else if (IsDisable(args))
-                return;
-
-            TSPlayer ow = TShock.Players[args.Object.whoAmI];
-            ITile pressurePlate = Main.tile[args.TileX, args.TileY];
-            ITile upBlock = Main.tile[args.TileX, args.TileY - 1];
-            ITile underLeftBlock = Main.tile[args.TileX - 1, args.TileY + 1];
-            ITile underRightBlock = Main.tile[args.TileX + 1, args.TileY + 1];
-
-            if (underBlock.type == JBID && underLeftBlock.type == JBID && underRightBlock.type == JBID)
-            {
-                if (isDisabling.Contains(TShock.Players[args.Object.whoAmI]))
-                    JPDisNext(args.TileX, args.TileY, TShock.Players[args.Object.whoAmI]);
                 else
                 {
-                    ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - height;
-                    TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
-                    ow.SendInfoMessage("Jump!");
+                    _dMgr.PadDisables.Remove(dis);
+                    if (_dMgr.DisabledPads.Count(p => p.X == args.TileX && p.Y == args.TileY) == 0)
+                    {
+                        if (_dMgr.AddPad(new DisabledManager.PadPoint { X = args.TileX, Y = args.TileY }))
+                        {
+                            ow.SendSuccessMessage("Successfully disabled this jump pad! (X: {0} Y: {1})", args.TileX, args.TileY);
+                            return;
+                        }
+                        ow.SendErrorMessage("Failed to disable this jump pad!");
+                    }
+
+                    if (_dMgr.RemovePad(_dMgr.DisabledPads.Find(p => p.X == args.TileX && p.Y == args.TileY)))
+                        ow.SendSuccessMessage("Successfully enabled this jump pad! (X: {0} Y: {1})", args.TileX, args.TileY);
+                    else
+                    {
+                        ow.SendErrorMessage("Failed to enable this jump pad!");
+                        return;
+                    }
                 }
-                    
             }
-            else
+            if (_dMgr.UserList.Count(u => u.Uuid == ow.UUID && (u.SelfDisabled || u.DisabledPads.Count(p => p.X == args.TileX && p.Y == args.TileY) != 0)) != 0)
                 return;
+            if (_dMgr.DisabledPads.Count(p => p.X == args.TileX && p.Y == args.TileY) != 0)
+                return;
+            ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - _config.Height;
+            TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
         }
-        //End presure plate trigger void
 
-
-
-        //Chceck Update VOID
-        void CUP()
+        private async void CheckUpdates()
         {
             try
             {
-                WebClient WClient = new WebClient();
-                WClient.DownloadFile("https://raw.githubusercontent.com/MineBartekSA/TerraJump/master/version.txt", TShock.SavePath + @"\Ver.txt");
+                var wClient = new WebClient();
+                await wClient.DownloadFileTaskAsync("https://raw.githubusercontent.com/MineBartekSA/TerraJump/master/version.txt", TShock.SavePath + @"\Ver.txt");
             }
             catch (WebException)
             {
-                TShock.Log.ConsoleError("[TerraJump Update] Sorry i can't check for updates. Please chcek your internet connection");
-                TShock.Log.Error("Sorry i can't check for updates. Please chcek your internet connection");
+                TShock.Log.ConsoleError("[TerraJump Update] Sorry I can't check for updates. Please check your internet connection");
+                TShock.Log.Error("Unable to check for updates!");
                 return;
             }
 
-            StreamReader readfile = new StreamReader(TShock.SavePath + @"\Ver.txt");
-            getver = readfile.ReadLine();
-            readfile.Close();
-
-            int firstGetver = (int)getver[0];
-            int secondGetver = (int)getver[2];
-            int thirdGetver = (int)getver[4];
-
-            int firstver = (int)ver[0];
-            int secondver = (int)ver[2];
-            int thirdver = (int)ver[4];
-
-            /*TShock.Log.ConsoleInfo("Fisrt get " + firstGetver + " Second get " + secondGetver + " Third get " + thirdGetver);        // FOR DEVS ONLY!!
-            TShock.Log.ConsoleInfo("Fisrt ver " + firstver + " Second ver " + secondver + " Third ver " + thirdver);*/
-
-            if (firstGetver > firstver && secondGetver > secondver && thirdGetver > thirdver)
+            var readFile = new StreamReader(TShock.SavePath + @"\Ver.txt");
+            getVer = readFile.ReadLine();
+            readFile.Close();
+            if (getVer == null || getVer.Length != 5)
             {
-                TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + getver + "!");
-                isUpdates = true;
+                TShock.Log.Error("Invalid Ver.txt file!");
                 return;
             }
+            var gVer = new Version(getVer[0] - 48, getVer[2] - 48, getVer[4] - 48);
+
+            if (gVer > ver)
+            {
+                TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + gVer + "!");
+                updates = gVer;
+                return;
+            }
+            if (gVer < ver)
+                TShock.Log.ConsoleInfo("[TerraJump Update] WOW! You have a newer than new version!");
 
             File.Delete(TShock.SavePath + @"\Ver.txt");
-
-            isUpdates = false;
             TShock.Log.Info("No Updates");
-            return;
         }
-        //End do Check Update VOID
-
-
-
-        //Is Disable
-        bool IsDisable(TriggerPressurePlateEventArgs<Player> args)
-        {
-            List<int> Xes = new List<int>();
-            List<int> Yes = new List<int>();
-            bool isDis = false;
-            /*XYSet.Tables["XYJumpPads"].AsEnumerable().ForEach(xyy =>
-            {
-                if ((x.Equals((float)xyy["X"])) && (y.Equals((float)xyy["Y"])))
-                {
-                    isDis = true;
-                    TShock.Log.Info("Found You!");
-                }
-            });*/
-
-            foreach(DataRow dr in XYSet.Tables["XYJumpPads"].Rows)
-            {
-                Xes.Add(Convert.ToInt32(dr["X"]));
-                Yes.Add(Convert.ToInt32(dr["Y"]));
-            }
-
-            if(Xes.Contains(args.TileX) && Yes.Contains(args.TileY))
-            {
-                //TShock.Log.Info("Found You!!");
-                return true;
-            }
-
-            if (isDis)
-                return true;
-            else if (!isDis)
-                return false;
-            return false;
-        }
-        //End of Is disable
-
-
-
-        //Format reverse VOID
-        string FormatRe(string mess, string formstring, TSPlayer arg)
-        {
-            string format = "";
-
-            format = formstring.Replace(":group:", arg.Group.Name).Replace(":user:", arg.Name).Replace(":mess:", mess);
-
-            return format;
-        }
-        //End Format reverso VOID
-
-
-
-        //Other Voids
-        void Up (TSPlayer player)
-        {
-            float x = player.TPlayer.position.X;
-            float pos = player.TPlayer.position.Y;
-            if(pos < 5478)
-            {
-                player.Teleport(x, 5478);
-            }
-            else if (pos >= 5478)
-            {
-                return;
-            }
-
-        }
-
-        //End fo Voids
     }
 
 }
