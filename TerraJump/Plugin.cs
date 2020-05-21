@@ -15,7 +15,7 @@ namespace TerraJump
     [ApiVersion(2, 1)]
     public class TerraJump : TerrariaPlugin
     {
-        private readonly Version ver = new Version(2, 2, 0);
+        private readonly Version ver = new Version(2, 3, 0);
         private static Config _config;
         private static DisabledManager _dMgr;
         private Version updates;
@@ -25,7 +25,7 @@ namespace TerraJump
         public override string Name => "TerraJump";
         public override Version Version => ver;
         public override string Author => "MineBartekSA";
-        public override string Description => "It's simple Jump Pads plugin for TShock!";
+        public override string Description => "It's a simple Jump Pads plugin for TShock!";
 
         public TerraJump(Main game) : base(game) { }
 
@@ -36,7 +36,7 @@ namespace TerraJump
             _dMgr = DisabledManager.Start();
             if(!TShock.ServerSideCharacterConfig.Enabled)
             {
-                TShock.Log.ConsoleError("[TerraJump]You need to have SSC enabled!");
+                TShock.Log.ConsoleError("[TerraJump]You need enable SSC!");
                 return;
             }
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
@@ -342,67 +342,80 @@ namespace TerraJump
                 return;
             }
             var ow = TShock.Players[args.Object.whoAmI];
-            if (_dMgr.PadDisables.Count(u => u.Uuid == ow.UUID) != 0)
+            try
             {
-                var dis = _dMgr.PadDisables.Find(u => u.Uuid == ow.UUID);
-                if (dis.IsSelf)
+                if (_dMgr.PadDisables.Count(u => u.Uuid == ow.UUID) != 0)
                 {
-                    _dMgr.PadDisables.Remove(dis);
-                    if (_dMgr.UserList.Count(u => u.Uuid == ow.UUID) == 0)
+                    var dis = _dMgr.PadDisables.Find(u => u.Uuid == ow.UUID);
+                    if (dis.IsSelf)
                     {
-                        if (_dMgr.AddUser(new DisabledManager.TjUser
+                        _dMgr.PadDisables.Remove(dis);
+                        if (_dMgr.UserList.Count(u => u.Uuid == ow.UUID) == 0)
                         {
-                            Uuid = ow.UUID,
-                            SelfDisabled = false,
-                            DisabledPads = { new DisabledManager.PadPoint { X = args.TileX, Y = args.TileY } }
-                        }))
-                        {
-                            ow.SendSuccessMessage("Successfully disabled this jump pad for you!");
-                            return;
-                        }
-                        ow.SendErrorMessage("Failed to disable this jump pad for you!");
-                    }
+                            if (_dMgr.AddUser(new DisabledManager.TjUser
+                            {
+                                Uuid = ow.UUID,
+                                SelfDisabled = false,
+                                DisabledPads = {new DisabledManager.PadPoint {X = args.TileX, Y = args.TileY}}
+                            }))
+                            {
+                                ow.SendSuccessMessage("Successfully disabled this jump pad for you!");
+                                return;
+                            }
 
-                    var user = _dMgr.UserList.Find(u => u.Uuid == ow.UUID);
-                    if (user.DisabledPads.RemoveAll(p => p.X == args.TileX && p.Y == args.TileY) == 0)
-                    {
-                        user.DisabledPads.Add(new DisabledManager.PadPoint { X = args.TileX, Y = args.TileY });
+                            ow.SendErrorMessage("Failed to disable this jump pad for you!");
+                        }
+
+                        var user = _dMgr.UserList.Find(u => u.Uuid == ow.UUID);
+                        if (user.DisabledPads.RemoveAll(p => p.X == args.TileX && p.Y == args.TileY) == 0)
+                        {
+                            user.DisabledPads.Add(new DisabledManager.PadPoint {X = args.TileX, Y = args.TileY});
+                            if (_dMgr.ModifyUser(user))
+                            {
+                                ow.SendSuccessMessage("Successfully disabled this jump pad for you!");
+                                return;
+                            }
+
+                            ow.SendErrorMessage("Failed to disable this jump pad for you!");
+                        }
+
                         if (_dMgr.ModifyUser(user))
+                            ow.SendSuccessMessage("Successfully enabled this jump pad for you!");
+                        else
                         {
-                            ow.SendSuccessMessage("Successfully disabled this jump pad for you!");
+                            ow.SendErrorMessage("Failed to enabled this jump pad for you!");
                             return;
                         }
-                        ow.SendErrorMessage("Failed to disable this jump pad for you!");
                     }
-                    if (_dMgr.ModifyUser(user))
-                        ow.SendSuccessMessage("Successfully enabled this jump pad for you!");
                     else
                     {
-                        ow.SendErrorMessage("Failed to enabled this jump pad for you!");
-                        return;
-                    }
-                }
-                else
-                {
-                    _dMgr.PadDisables.Remove(dis);
-                    if (_dMgr.DisabledPads.Count(p => p.X == args.TileX && p.Y == args.TileY) == 0)
-                    {
-                        if (_dMgr.AddPad(new DisabledManager.PadPoint { X = args.TileX, Y = args.TileY }))
+                        _dMgr.PadDisables.Remove(dis);
+                        if (_dMgr.DisabledPads.Count(p => p.X == args.TileX && p.Y == args.TileY) == 0)
                         {
-                            ow.SendSuccessMessage("Successfully disabled this jump pad! (X: {0} Y: {1})", args.TileX, args.TileY);
-                            return;
-                        }
-                        ow.SendErrorMessage("Failed to disable this jump pad!");
-                    }
+                            if (_dMgr.AddPad(new DisabledManager.PadPoint {X = args.TileX, Y = args.TileY}))
+                            {
+                                ow.SendSuccessMessage("Successfully disabled this jump pad! (X: {0} Y: {1})",
+                                    args.TileX, args.TileY);
+                                return;
+                            }
 
-                    if (_dMgr.RemovePad(_dMgr.DisabledPads.Find(p => p.X == args.TileX && p.Y == args.TileY)))
-                        ow.SendSuccessMessage("Successfully enabled this jump pad! (X: {0} Y: {1})", args.TileX, args.TileY);
-                    else
-                    {
-                        ow.SendErrorMessage("Failed to enable this jump pad!");
-                        return;
+                            ow.SendErrorMessage("Failed to disable this jump pad!");
+                        }
+
+                        if (_dMgr.RemovePad(_dMgr.DisabledPads.Find(p => p.X == args.TileX && p.Y == args.TileY)))
+                            ow.SendSuccessMessage("Successfully enabled this jump pad! (X: {0} Y: {1})", args.TileX,
+                                args.TileY);
+                        else
+                        {
+                            ow.SendErrorMessage("Failed to enable this jump pad!");
+                            return;
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                TShock.Log.Error($"Exception!\n{e}\n{e.StackTrace}");
             }
             if (_dMgr.UserList.Count(u => u.Uuid == ow.UUID && (u.SelfDisabled || u.DisabledPads.Count(p => p.X == args.TileX && p.Y == args.TileY) != 0)) != 0)
                 return;
@@ -442,8 +455,6 @@ namespace TerraJump
                 updates = gVer;
                 return;
             }
-            if (gVer < ver)
-                TShock.Log.ConsoleInfo("[TerraJump Update] WOW! You have a newer than new version!");
 
             File.Delete(TShock.SavePath + @"\Ver.txt");
             TShock.Log.Info("No Updates");

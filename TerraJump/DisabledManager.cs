@@ -164,16 +164,16 @@ namespace TerraJump
                     DisabledPads.Add(new PadPoint {X = Convert.ToInt32(row["X"]), Y = Convert.ToInt32(row["Y"])});
                 foreach (var user in json.UserList)
                 {
-                    var players = TShock.Utils.FindPlayer(user);
-                    if(players.Count == 1)
+                    var player = TShock.UserAccounts.GetUserAccountByName(user);
+                    if (player != null)
                         UserList.Add(new TjUser
                         {
-                            Uuid = players[0].UUID,
+                            Uuid = player.UUID,
                             SelfDisabled = false,
                             DisabledPads = new List<PadPoint>()
                         });
                     else
-                        TShock.Log.Error("Found more than one or none players with username '{0}'!", user);
+                        TShock.Log.Error($"Player not found with username '{user}'!");
                 }
             }
             catch
