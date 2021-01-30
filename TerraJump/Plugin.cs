@@ -8,22 +8,22 @@ using TerrariaApi.Server;
 using TShockAPI;
 using System.Net;
 using Microsoft.Xna.Framework;
-using Terraria.ID;
+using Terraria.Enums;
 
 namespace TerraJump
 {
     [ApiVersion(2, 1)]
     public class TerraJump : TerrariaPlugin
     {
-        private readonly Version ver = new Version(2, 3, 0);
+        private readonly Version _ver = new Version(2, 3, 1);
         private static Config _config;
         private static DisabledManager _dMgr;
-        private Version updates;
-        private string getVer;
-        private int tick = 1;
+        private Version _updates;
+        private string _getVer;
+        private int _tick = 1;
 
         public override string Name => "TerraJump";
-        public override Version Version => ver;
+        public override Version Version => _ver;
         public override string Author => "MineBartekSA";
         public override string Description => "It's a simple Jump Pads plugin for TShock!";
 
@@ -69,19 +69,18 @@ namespace TerraJump
 
         private void OnUpdate(EventArgs args)
         {
-            if (tick == 60)
+            if (_tick == 60)
             {
-                tick = 1;
+                _tick = 1;
                 var l = new List<string>();
-                foreach (var dis in _dMgr.PadDisables)
+                foreach (var dis in _dMgr.PadDisables.Where(dis => dis.Started.Add(TimeSpan.FromSeconds(20)) <= DateTime.Now))
                 {
-                    if (dis.Started.Add(TimeSpan.FromSeconds(20)) > DateTime.Now) continue;
                     TShock.Players.First(p => p.UUID == dis.Uuid).SendInfoMessage("You are no longer going to disable next jump pad");
                     l.Add(dis.Uuid);
                 }
                 l.ForEach(uuid => _dMgr.PadDisables.RemoveAll(user => user.Uuid == uuid));
             }
-            tick++;
+            _tick++;
         }
 
         #region Command Functions
@@ -127,9 +126,9 @@ namespace TerraJump
 
         private void SendHelp(TSPlayer player)
         {
-            player.SendSuccessMessage("TerraJump v{0}", ver);
-            if (updates != null)
-                player.SendMessage($"Update to version {updates} is available!", Color.Aqua);
+            player.SendSuccessMessage("TerraJump v{0}", _ver);
+            if (_updates != null)
+                player.SendMessage($"Update to version {_updates} is available!", Color.Aqua);
             player.SendInfoMessage("Usage: /terrajump <command>");
             player.SendInfoMessage("Commands:");
             player.SendInfoMessage(" - toggle - Toggle TerraJump");
@@ -184,19 +183,18 @@ namespace TerraJump
         {
             if (args.Parameters.Count <= 2)
             {
-                var tile = typeof(TileID).GetFields().Where(t => (ushort) t.GetValue(null) == _config.BlockId).Select(t => t.Name).First();
+                var tile = (TileIDEnum) _config.BlockId;
                 args.Player.SendInfoMessage("Current jump pads tile is {0} ({1})", tile, _config.BlockId);
                 return;
             }
             var id = (int)float.Parse(args.Parameters[2]);
-            var tileName = typeof(TileID).GetFields().Where(t => (ushort)t.GetValue(null) == id).Select(t => t.Name).First();
-            if (tileName == null)
+            if (!Enum.TryParse($"{id}", out TileIDEnum tileName))
             {
                 args.Player.SendErrorMessage("Invalid tile id!");
                 return;
             }
             _config.BlockId = id;
-            args.Player.SendSuccessMessage("You have set jump pad tile to {0}", tileName);
+            args.Player.SendSuccessMessage("You have set jump pad tile to {0} ({1})", tileName, id);
             TShock.Log.ConsoleInfo("Jump Pad Tile ID = {0}", _config.BlockId);
             _config.Update();
         }
@@ -262,8 +260,8 @@ namespace TerraJump
                 default:
                     args.Player.SendInfoMessage("Usage: /terrajump disable <subcommand>");
                     args.Player.SendInfoMessage("Subcommands:");
-                    args.Player.SendInfoMessage(" - self - Disable jump pads for self");
-                    args.Player.SendInfoMessage(" - pad - Disable specific jump pad");
+                    args.Player.SendInfoMessage(" - self - Disable jump pads for yourself");
+                    args.Player.SendInfoMessage(" - pad - Disable specific jump pad for yourself");
                     args.Player.SendInfoMessage(" - global - Disable a jump pad globally");
                     break;
             }
@@ -356,7 +354,7 @@ namespace TerraJump
                             {
                                 Uuid = ow.UUID,
                                 SelfDisabled = false,
-                                DisabledPads = {new DisabledManager.PadPoint {X = args.TileX, Y = args.TileY}}
+                                DisabledPads = new List<DisabledManager.PadPoint> {new DisabledManager.PadPoint {X = args.TileX, Y = args.TileY}}
                             }))
                             {
                                 ow.SendSuccessMessage("Successfully disabled this jump pad for you!");
@@ -401,14 +399,16 @@ namespace TerraJump
 
                             ow.SendErrorMessage("Failed to disable this jump pad!");
                         }
-
-                        if (_dMgr.RemovePad(_dMgr.DisabledPads.Find(p => p.X == args.TileX && p.Y == args.TileY)))
-                            ow.SendSuccessMessage("Successfully enabled this jump pad! (X: {0} Y: {1})", args.TileX,
-                                args.TileY);
                         else
                         {
-                            ow.SendErrorMessage("Failed to enable this jump pad!");
-                            return;
+                            if (_dMgr.RemovePad(_dMgr.DisabledPads.Find(p => p.X == args.TileX && p.Y == args.TileY)))
+                                ow.SendSuccessMessage("Successfully enabled this jump pad! (X: {0} Y: {1})", args.TileX,
+                                    args.TileY);
+                            else
+                            {
+                                ow.SendErrorMessage("Failed to enable this jump pad!");
+                                return;
+                            }
                         }
                     }
                 }
@@ -421,7 +421,7 @@ namespace TerraJump
                 return;
             if (_dMgr.DisabledPads.Count(p => p.X == args.TileX && p.Y == args.TileY) != 0)
                 return;
-            ow.TPlayer.velocity.Y = ow.TPlayer.velocity.Y - _config.Height;
+            ow.TPlayer.velocity.Y -= _config.Height;
             TSPlayer.All.SendData(PacketTypes.PlayerUpdate, "", ow.Index);
         }
 
@@ -434,25 +434,25 @@ namespace TerraJump
             }
             catch (WebException)
             {
-                TShock.Log.ConsoleError("[TerraJump Update] Sorry I can't check for updates. Please check your internet connection");
+                TShock.Log.ConsoleError("[TerraJump Update] Sorry I couldn't check for updates. Please check your internet connection");
                 TShock.Log.Error("Unable to check for updates!");
                 return;
             }
 
             var readFile = new StreamReader(TShock.SavePath + @"\Ver.txt");
-            getVer = readFile.ReadLine();
+            _getVer = await readFile.ReadLineAsync();
             readFile.Close();
-            if (getVer == null || getVer.Length != 5)
+            if (_getVer == null || _getVer.Length != 5)
             {
                 TShock.Log.Error("Invalid Ver.txt file!");
                 return;
             }
-            var gVer = new Version(getVer[0] - 48, getVer[2] - 48, getVer[4] - 48);
+            var gVer = new Version(_getVer[0] - 48, _getVer[2] - 48, _getVer[4] - 48);
 
-            if (gVer > ver)
+            if (gVer > _ver)
             {
                 TShock.Log.ConsoleInfo("[TerraJump Update] There is a new version! New version " + gVer + "!");
-                updates = gVer;
+                _updates = gVer;
                 return;
             }
 
